@@ -6,6 +6,8 @@ import Navigation from './components/Navigation';
 // Lazy loading pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail'));
+const Progress = lazy(() => import('./pages/Progress'));
+const Nutrition = lazy(() => import('./pages/Nutrition'));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -15,6 +17,8 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/workout" element={<WorkoutDetail />} />
+        <Route path="/progress" element={<Progress />} />
+        <Route path="/nutrition" element={<Nutrition />} />
       </Routes>
     </AnimatePresence>
   );
