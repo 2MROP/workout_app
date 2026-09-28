@@ -9,8 +9,14 @@ import {
   Upload,
   User,
   CheckCircle,
-  HelpCircle,
-  Ruler
+  Ruler,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Dumbbell,
+  Flame,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 
 import PageTransition from '../components/PageTransition';
@@ -20,16 +26,23 @@ import {
   getLocalDateString,
   getMondayOfWeek,
   getWeekDates,
+  getPreviousMonday,
+  getNextMonday,
   formatDisplayDate,
   parseLocalDate
 } from '../utils/dateUtils';
-import { calc7DayWeightAvg } from '../utils/calcUtils';
+import { calc7DayWeightAvg, evaluateWeeklyReview } from '../utils/calcUtils';
 
 export default function Progress() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const context = useAppContext();
   const {
+    state,
     weightLogs,
     waistLogs,
+    workoutLogs,
+    cardioLogs,
+    nutritionLogs,
     profile,
     meta,
     logWeight,
@@ -37,7 +50,7 @@ export default function Progress() {
     updateProfile,
     exportData,
     importData
-  } = useAppContext();
+  } = context;
 
   // Active tab: 'weight', 'review', or 'profile'
   const activeTab = searchParams.get('tab') || 'weight';
@@ -53,7 +66,6 @@ export default function Progress() {
   const currentLoggedWeight = weightLogs[selectedDate] !== undefined ? String(weightLogs[selectedDate]) : '';
   const [weightInput, setWeightInput] = useState(currentLoggedWeight);
 
-  // Sync input when selectedDate changes
   React.useEffect(() => {
     setWeightInput(weightLogs[selectedDate] !== undefined ? String(weightLogs[selectedDate]) : '');
   }, [selectedDate, weightLogs]);
@@ -66,6 +78,32 @@ export default function Progress() {
   React.useEffect(() => {
     setWaistInput(waistLogs[waistDate] !== undefined ? String(waistLogs[waistDate]) : '');
   }, [waistDate, waistLogs]);
+
+  // Weekly Review week selector (defaults to last completed week)
+  const defaultReviewMonday = getPreviousMonday(currentMonday);
+  const [selectedReviewMonday, setSelectedReviewMonday] = useState(defaultReviewMonday);
+
+  const prevReviewWeek = () => {
+    setSelectedReviewMonday(getPreviousMonday(selectedReviewMonday));
+  };
+
+  const nextReviewWeek = () => {
+    setSelectedReviewMonday(getNextMonday(selectedReviewMonday));
+  };
+
+  // Evaluate weekly review for the selected week
+  const reviewData = useMemo(() => {
+    return evaluateWeeklyReview(selectedReviewMonday, state);
+  }, [selectedReviewMonday, state]);
+
+  // Plateau checklist interactive state
+  const [checkedChecklistItems, setCheckedChecklistItems] = useState({});
+  const toggleChecklistItem = (item) => {
+    setCheckedChecklistItems(prev => ({
+      ...prev,
+      [item]: !prev[item]
+    }));
+  };
 
   // Check if waist was logged for current week
   const hasLoggedWaistThisWeek = currentWeekDates.some(d => waistLogs[d] !== undefined);
@@ -134,7 +172,7 @@ export default function Progress() {
       try {
         const parsed = JSON.parse(event.target.result);
         if (!parsed || parsed.schemaVersion !== 1) {
-          throw new Error('Unsupported schema version. Only fitness_v2 format is supported.');
+          throw new Error('Unsupported schema version. Expected fitness_v2.');
         }
 
         const workoutCount = Object.keys(parsed.workoutLogs || {}).length;
@@ -166,7 +204,7 @@ export default function Progress() {
     }
   };
 
-  // Prepare points for Pure-SVG Trend Graph
+  // Chart data for SVG trend graph
   const chartData = useMemo(() => {
     const entries = Object.keys(weightLogs)
       .map(dStr => ({ dateStr: dStr, weight: weightLogs[dStr] }))
@@ -174,19 +212,16 @@ export default function Progress() {
 
     if (entries.length === 0) return null;
 
-    // Compute rolling average for each point
     const pointsWithAvg = entries.map(item => ({
       ...item,
       avg: calc7DayWeightAvg(weightLogs, item.dateStr)
     }));
 
-    // Find min and max weight for scaling (include goal lines 90 and 85)
     const allWeights = entries.map(e => e.weight);
     const minW = Math.min(...allWeights, 84);
     const maxW = Math.max(...allWeights, 100);
     const range = maxW - minW || 1;
 
-    // SVG coordinate space
     const width = 360;
     const height = 180;
     const padX = 30;
@@ -210,7 +245,6 @@ export default function Progress() {
       ? rawPoints.reduce((acc, p, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`, '')
       : '';
 
-    // Average line path (only connecting points with valid avg)
     const avgPoints = rawPoints.filter(p => p.avgY !== null);
     const avgPath = avgPoints.length > 1
       ? avgPoints.reduce((acc, p, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${p.x} ${p.avgY}`, '')
@@ -222,20 +256,23 @@ export default function Progress() {
       avgPath,
       goal90Y: getY(90),
       goal85Y: getY(85),
-      minW: Math.floor(minW),
-      maxW: Math.ceil(maxW),
       width,
       height
     };
   }, [weightLogs]);
 
-  // Waist change history
+  // Waist history
   const waistHistory = useMemo(() => {
     return Object.keys(waistLogs)
       .map(dStr => ({ dateStr: dStr, waist: waistLogs[dStr] }))
       .sort((a, b) => b.dateStr.localeCompare(a.dateStr))
       .slice(0, 5);
   }, [waistLogs]);
+
+  // Format week range label (Mon - Sun)
+  const reviewWeekDates = getWeekDates(selectedReviewMonday);
+  const weekStartDisplay = formatDisplayDate(reviewWeekDates[0], { month: 'short', day: 'numeric' });
+  const weekEndDisplay = formatDisplayDate(reviewWeekDates[6], { month: 'short', day: 'numeric' });
 
   return (
     <PageTransition>
@@ -244,9 +281,9 @@ export default function Progress() {
         {/* Top Header */}
         <div className="pt-2 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Progress & Logs</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Progress & Review</h1>
             <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-              Weight trend, waist measurement, and profile
+              Weight trend, waist measurement, and weekly review
             </p>
           </div>
         </div>
@@ -493,7 +530,6 @@ export default function Progress() {
                           stroke="#0f1014"
                           strokeWidth={1.5}
                         />
-                        {/* Show weight text for first and last point */}
                         {(i === 0 || i === chartData.points.length - 1) && (
                           <text
                             x={pt.x}
@@ -614,19 +650,249 @@ export default function Progress() {
           </div>
         )}
 
-        {/* TAB 2: WEEKLY REVIEW PLACEHOLDER (Filled in Stage 5) */}
+        {/* TAB 2: WEEKLY REVIEW (STAGE 5) */}
         {activeTab === 'review' && (
-          <Card className="p-8 text-center space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--color-surface-hover)] mx-auto flex items-center justify-center text-[var(--color-primary)]">
-              <Calendar size={24} />
+          <div className="space-y-5">
+            
+            {/* Week Switcher Bar */}
+            <div className="glass rounded-xl p-1.5 flex items-center justify-between text-xs">
+              <button
+                onClick={prevReviewWeek}
+                className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] hover:text-white transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="text-center">
+                <span className="font-bold text-sm block">
+                  {weekStartDisplay} – {weekEndDisplay}
+                </span>
+                <span className="text-[10px] text-[var(--color-text-secondary)]">
+                  {selectedReviewMonday === currentMonday ? 'Current Week' : 'Completed Week'}
+                </span>
+              </div>
+
+              <button
+                onClick={nextReviewWeek}
+                className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] hover:text-white transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
-            <div>
-              <h3 className="text-lg font-bold">Weekly Review</h3>
-              <p className="text-xs text-[var(--color-text-secondary)] mt-1 max-w-xs mx-auto leading-relaxed">
-                Comprehensive weekly analysis of weight change, waist deltas, workouts/cardio completed, protein consistency, and automated decision rules will appear here in Stage 5.
-              </p>
+
+            {/* Minimum-Week Mode Banner */}
+            {reviewData.isMinimumAchieved && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-3.5 rounded-2xl bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/40 text-[var(--color-primary)] flex items-start gap-2.5 shadow-[var(--shadow-glow)]"
+              >
+                <Sparkles size={18} className="shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-xs uppercase tracking-wider">
+                    On Track (Minimum Target Achieved) 🎯
+                  </h4>
+                  <p className="text-xs text-white/90 mt-0.5 leading-relaxed">
+                    You hit at least 2 full workouts and reached your protein target on 4+ days. That counts as an on-track week!
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* 6 Key Weekly Metrics Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              
+              {/* Metric 1: Weight Avg Change */}
+              <Card className="p-3.5 flex flex-col justify-between">
+                <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+                  Weight Avg Change
+                </span>
+                <div className="my-1.5">
+                  {reviewData.weightChange !== null ? (
+                    <span className={`text-xl font-bold font-mono ${
+                      reviewData.weightChange < 0
+                        ? 'text-[var(--color-primary)]'
+                        : reviewData.weightChange > 0
+                        ? 'text-amber-400'
+                        : 'text-white'
+                    }`}>
+                      {reviewData.weightChange > 0 ? `+${reviewData.weightChange}` : reviewData.weightChange} kg
+                    </span>
+                  ) : (
+                    <span className="text-xs text-[var(--color-text-secondary)] italic">
+                      Need 2+ entries / wk
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-[var(--color-text-secondary)]">
+                  {reviewData.currentWeekWeight.avg !== null ? `This wk: ${reviewData.currentWeekWeight.avg} kg` : 'Incomplete'}
+                </span>
+              </Card>
+
+              {/* Metric 2: Waist Change */}
+              <Card className="p-3.5 flex flex-col justify-between">
+                <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+                  Waist Delta
+                </span>
+                <div className="my-1.5">
+                  {reviewData.waistChange !== null ? (
+                    <span className={`text-xl font-bold font-mono ${
+                      reviewData.waistChange < 0 ? 'text-[var(--color-primary)]' : 'text-amber-400'
+                    }`}>
+                      {reviewData.waistChange > 0 ? `+${reviewData.waistChange}` : reviewData.waistChange} cm
+                    </span>
+                  ) : reviewData.currentWaist !== null ? (
+                    <span className="text-xl font-bold font-mono text-white">
+                      {reviewData.currentWaist} cm
+                    </span>
+                  ) : (
+                    <span className="text-xs text-amber-300 italic">
+                      Missing entry
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-[var(--color-text-secondary)]">
+                  {reviewData.prevWaist !== null ? `Prev: ${reviewData.prevWaist} cm` : 'First entry'}
+                </span>
+              </Card>
+
+              {/* Metric 3: Workouts Done */}
+              <Card className="p-3.5 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+                    Workouts Done
+                  </span>
+                  <Dumbbell size={14} className="text-[var(--color-primary)]" />
+                </div>
+                <div className="my-1.5">
+                  <span className="text-xl font-bold font-mono text-white">
+                    {reviewData.workoutsDone} <span className="text-sm font-normal text-[var(--color-text-secondary)]">/ 3</span>
+                  </span>
+                </div>
+                <div className="w-full bg-[var(--color-surface-border)] h-1 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[var(--color-primary)]"
+                    style={{ width: `${(reviewData.workoutsDone / 3) * 100}%` }}
+                  />
+                </div>
+              </Card>
+
+              {/* Metric 4: Cardio Done */}
+              <Card className="p-3.5 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+                    Cardio Done
+                  </span>
+                  <Flame size={14} className="text-[var(--color-accent)]" />
+                </div>
+                <div className="my-1.5">
+                  <span className="text-xl font-bold font-mono text-white">
+                    {reviewData.cardioDone} <span className="text-sm font-normal text-[var(--color-text-secondary)]">/ 3</span>
+                  </span>
+                </div>
+                <div className="w-full bg-[var(--color-surface-border)] h-1 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[var(--color-accent)]"
+                    style={{ width: `${(reviewData.cardioDone / 3) * 100}%` }}
+                  />
+                </div>
+              </Card>
+
+              {/* Metric 5: Protein Consistency */}
+              <Card className="p-3.5 flex flex-col justify-between">
+                <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+                  Protein (≥130g)
+                </span>
+                <div className="my-1.5">
+                  <span className="text-xl font-bold font-mono text-white">
+                    {reviewData.proteinDaysHit} <span className="text-sm font-normal text-[var(--color-text-secondary)]">/ 7 days</span>
+                  </span>
+                </div>
+                <span className="text-[10px] text-[var(--color-text-secondary)]">
+                  Target: 140g daily
+                </span>
+              </Card>
+
+              {/* Metric 6: Food Patterns */}
+              <Card className="p-3.5 flex flex-col justify-between">
+                <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+                  Weekly Patterns
+                </span>
+                <div className="my-1 text-xs space-y-0.5">
+                  <div className="flex justify-between font-mono">
+                    <span className="text-[var(--color-text-secondary)]">Heavy meals:</span>
+                    <span className="font-bold text-white">{reviewData.restaurantMeals}</span>
+                  </div>
+                  <div className="flex justify-between font-mono">
+                    <span className="text-[var(--color-text-secondary)]">Sugary drinks:</span>
+                    <span className="font-bold text-white">{reviewData.sugaryDrinks}</span>
+                  </div>
+                </div>
+                <span className="text-[10px] text-[var(--color-text-secondary)]">
+                  Portion tracking only
+                </span>
+              </Card>
+
             </div>
-          </Card>
+
+            {/* Automated Coaching Recommendation (Exact single recommendation) */}
+            <Card isGlowing={reviewData.recommendation.type === 'on_track'} className="space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-[var(--color-text-secondary)]">
+                    {reviewData.recommendation.badge}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-base font-bold text-white">
+                  {reviewData.recommendation.title}
+                </h3>
+                <p className="text-xs text-[var(--color-text-secondary)] mt-1.5 leading-relaxed">
+                  {reviewData.recommendation.message}
+                </p>
+              </div>
+
+              {/* Plateau Checklist if triggered */}
+              {Array.isArray(reviewData.recommendation.checklist) && (
+                <div className="p-3 rounded-xl bg-[var(--color-background)] border border-[var(--color-surface-border)] space-y-2 mt-2">
+                  <span className="text-[11px] font-bold text-amber-300 block">
+                    Plateau Self-Check:
+                  </span>
+                  <div className="space-y-1.5">
+                    {reviewData.recommendation.checklist.map((item, idx) => {
+                      const isChecked = !!checkedChecklistItems[item];
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => toggleChecklistItem(item)}
+                          className="flex items-center gap-2 text-xs text-white/90 cursor-pointer select-none"
+                        >
+                          {isChecked ? (
+                            <CheckSquare size={16} className="text-[var(--color-primary)] shrink-0" />
+                          ) : (
+                            <Square size={16} className="text-[var(--color-text-secondary)] shrink-0" />
+                          )}
+                          <span className={isChecked ? 'line-through text-[var(--color-text-secondary)]' : ''}>
+                            {item}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Note */}
+              {reviewData.recommendation.calorieNote && (
+                <div className="p-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] text-xs font-mono text-[var(--color-primary)]">
+                  💡 Suggestion: {reviewData.recommendation.calorieNote}
+                </div>
+              )}
+            </Card>
+
+          </div>
         )}
 
         {/* TAB 3: PROFILE & BACKUP */}
