@@ -1,86 +1,200 @@
+/**
+ * Workout Plan Pro - 3-Day Full Body Split + Walking Program
+ * Every exercise has a stable unique string ID.
+ */
+
 export const workoutPlan = {
   monday: {
-    title: "Upper Push",
-    duration: "45 min",
+    type: 'workout',
+    title: 'Full Body A',
+    subtitle: 'Compound Push / Legs / Upper Pull',
+    duration: '50 min + 25m cardio',
+    cardioTarget: '25 min treadmill',
     exercises: [
-      { name: "Barbell Bench Press", sets: 4, reps: "6-8" },
-      { name: "Incline DB Press", sets: 3, reps: "8-10" },
-      { name: "Shoulder Press", sets: 3, reps: "6-8" },
-      { name: "Lateral Raises", sets: 3, reps: "12-15" },
-      { name: "Triceps Pushdown", sets: 3, reps: "10-12" }
-    ]
-  },
-  tuesday: {
-    title: "Lower Body",
-    duration: "Long",
-    exercises: [
-      { name: "Squat", sets: 4, reps: "6-8" },
-      { name: "Leg Press", sets: 3, reps: "10-12" },
-      { name: "Romanian Deadlift", sets: 3, reps: "8-10" },
-      { name: "Leg Curl", sets: 3, reps: "12-15" },
-      { name: "Walking Lunges", sets: 2, reps: "12 steps each leg" },
-      { name: "Incline Walk", type: "cardio", duration: "15-20 min" }
-    ]
-  },
-  wednesday: {
-    title: "Upper Pull",
-    duration: "45 min",
-    exercises: [
-      { name: "Pull-ups / Lat Pulldown", sets: 4, reps: "8-10" },
-      { name: "Barbell Row", sets: 3, reps: "8-10" },
-      { name: "Seated Row", sets: 3, reps: "10-12" },
-      { name: "Face Pull", sets: 3, reps: "12-15" },
-      { name: "Biceps Curl", sets: 3, reps: "10-12" }
-    ]
-  },
-  thursday: {
-    title: "Push (Volume)",
-    duration: "Long",
-    exercises: [
-      { name: "Incline Bench Press", sets: 4, reps: "8-10" },
-      { name: "Flat DB Press", sets: 3, reps: "8-12" },
-      { name: "Cable Fly", sets: 3, reps: "12-15" },
-      { name: "Shoulder Press", sets: 3, reps: "8-10" },
-      { name: "Lateral Raises", sets: 4, reps: "12-15" },
-      { name: "Triceps Pushdown", sets: 3, reps: "10-12" }
-    ]
-  },
-  friday: {
-    title: "Lower (Power)",
-    duration: "45 min",
-    exercises: [
-      { name: "Deadlift", sets: 3, reps: "4-6" },
-      { 
-        name: "Leg Extension + Hamstring Curl",
-        type: "superset",
-        rounds: 3,
-        reps: "10-12 each"
-      },
-      { name: "Calf Raises", sets: 3, reps: "12-15" }
-    ]
-  },
-  saturday: {
-    title: "Full Body + Conditioning",
-    duration: "Long",
-    exercises: [
-      { name: "DB Bench Press", sets: 3, reps: "8-10" },
-      { name: "Pull-ups", sets: 3, reps: "8-10" },
-      { name: "Light Squats", sets: 3, reps: "10-12" },
-      { name: "Lateral Raises", sets: 3, reps: "12-15" },
       {
-        name: "Conditioning Circuit",
-        type: "circuit",
-        rounds: "3-4",
-        exercises: [
-          "Burpees × 10",
-          "Kettlebell Swings × 15",
-          "Mountain Climbers × 30 sec"
-        ]
+        id: 'bench-press',
+        name: 'Barbell Bench Press',
+        sets: 4,
+        reps: '6-8',
+        targetMuscles: 'Chest, Triceps, Front Delts'
       },
-      { name: "Hanging Leg Raises", sets: 3, reps: "12-15" },
-      { name: "Plank", sets: 3, duration: "30-60 sec" },
-      { name: "Incline Walk", type: "cardio", duration: "15-20 min" }
+      {
+        id: 'squat',
+        name: 'Squat',
+        sets: 4,
+        reps: '6-8',
+        targetMuscles: 'Quads, Glutes, Core'
+      },
+      {
+        id: 'pull-ups-lat-pulldown',
+        name: 'Pull-ups / Lat Pulldown',
+        sets: 4,
+        reps: '8-10',
+        targetMuscles: 'Lats, Upper Back, Biceps'
+      },
+      {
+        id: 'lateral-raises',
+        name: 'Lateral Raises',
+        sets: 3,
+        reps: '12-15',
+        targetMuscles: 'Lateral Deltoids'
+      },
+      {
+        id: 'triceps-pushdown',
+        name: 'Triceps Pushdown',
+        sets: 3,
+        reps: '10-12',
+        targetMuscles: 'Triceps'
+      },
+      {
+        id: 'treadmill',
+        name: 'Treadmill Incline Walk / Jog',
+        type: 'cardio',
+        duration: '25 min',
+        targetMuscles: 'Cardiovascular'
+      }
     ]
+  },
+
+  tuesday: {
+    type: 'walking',
+    title: 'Walking Day',
+    subtitle: 'Active Recovery & Step Target',
+    duration: 'Throughout day',
+    targetSteps: '7,000 - 10,000 steps',
+    exercises: []
+  },
+
+  wednesday: {
+    type: 'workout',
+    title: 'Full Body B',
+    subtitle: 'Incline Press / Posterior Chain / Row',
+    duration: '50 min + 25m cardio',
+    cardioTarget: '25 min treadmill',
+    exercises: [
+      {
+        id: 'incline-db-press',
+        name: 'Incline DB Press',
+        sets: 4,
+        reps: '8-10',
+        targetMuscles: 'Upper Chest, Anterior Delts'
+      },
+      {
+        id: 'romanian-deadlift',
+        name: 'Romanian Deadlift (RDL)',
+        sets: 3,
+        reps: '8-10',
+        targetMuscles: 'Hamstrings, Glutes, Lower Back'
+      },
+      {
+        id: 'barbell-row',
+        name: 'Barbell Row',
+        sets: 3,
+        reps: '8-10',
+        targetMuscles: 'Lats, Rhomboids, Mid Back'
+      },
+      {
+        id: 'shoulder-press',
+        name: 'Shoulder Press',
+        sets: 3,
+        reps: '6-8',
+        targetMuscles: 'Deltoids, Upper Chest'
+      },
+      {
+        id: 'biceps-curl',
+        name: 'Biceps Curl',
+        sets: 3,
+        reps: '10-12',
+        targetMuscles: 'Biceps Brachii'
+      },
+      {
+        id: 'treadmill',
+        name: 'Treadmill Incline Walk / Jog',
+        type: 'cardio',
+        duration: '25 min',
+        targetMuscles: 'Cardiovascular'
+      }
+    ]
+  },
+
+  thursday: {
+    type: 'walking',
+    title: 'Walking Day',
+    subtitle: 'Active Recovery & Step Target',
+    duration: 'Throughout day',
+    targetSteps: '7,000 - 10,000 steps',
+    exercises: []
+  },
+
+  friday: {
+    type: 'workout',
+    title: 'Full Body C',
+    subtitle: 'Deadlift / Chest / Legs / Rear Delts & Core',
+    duration: '50 min + 25m cardio',
+    cardioTarget: '25 min treadmill',
+    exercises: [
+      {
+        id: 'deadlift',
+        name: 'Deadlift',
+        sets: 3,
+        reps: '4-6',
+        note: 'Stop 1-2 reps before failure. Keep form strict.',
+        targetMuscles: 'Posterior Chain, Glutes, Back'
+      },
+      {
+        id: 'flat-db-press',
+        name: 'Flat DB Press',
+        sets: 3,
+        reps: '8-12',
+        targetMuscles: 'Pectorals, Triceps'
+      },
+      {
+        id: 'leg-press',
+        name: 'Leg Press',
+        sets: 3,
+        reps: '10-12',
+        targetMuscles: 'Quads, Glutes'
+      },
+      {
+        id: 'face-pull',
+        name: 'Face Pull',
+        sets: 3,
+        reps: '12-15',
+        targetMuscles: 'Rear Delts, Rotator Cuff'
+      },
+      {
+        id: 'hanging-leg-raises-plank',
+        name: 'Hanging Leg Raises / Plank',
+        sets: 3,
+        reps: '12-15',
+        targetMuscles: 'Abdominals, Core Stability'
+      },
+      {
+        id: 'treadmill',
+        name: 'Treadmill Incline Walk / Jog',
+        type: 'cardio',
+        duration: '25 min',
+        targetMuscles: 'Cardiovascular'
+      }
+    ]
+  },
+
+  saturday: {
+    type: 'walking',
+    title: 'Walking Day',
+    subtitle: 'Weekend Step Target & Recovery',
+    duration: 'Throughout day',
+    targetSteps: '7,000 - 10,000 steps',
+    exercises: []
+  },
+
+  sunday: {
+    type: 'walking',
+    title: 'Recovery Walking Day',
+    subtitle: 'Normal Easy Walking & Reset',
+    duration: 'Throughout day',
+    targetSteps: '7,000 - 10,000 steps',
+    exercises: []
   }
 };
 
@@ -91,46 +205,58 @@ export const parseSets = (ex) => {
     const match = ex.rounds.toString().match(/\d+/);
     if (match) return parseInt(match[0], 10);
   }
-  return 1; // Fallback for cardio/single duration
+  return 1;
 };
 
 export const exerciseImages = {
-  "Barbell Bench Press": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Bench_Press_-_Medium_Grip"],
-  "Incline DB Press": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip"],
-  "Shoulder Press": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Alternating_Cable_Shoulder_Press"],
-  "Lateral Raises": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Power_Partials"],
-  "Triceps Pushdown": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Reverse_Grip_Triceps_Pushdown"],
-  "Squat": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Full_Squat"],
-  "Leg Press": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Calf_Press_On_The_Leg_Press_Machine"],
-  "Romanian Deadlift": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Romanian_Deadlift"],
-  "Leg Curl": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Ball_Leg_Curl"],
-  "Walking Lunges": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Dumbbell_Lunges"],
-  "Incline Walk": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Running_Treadmill"],
-  "Pull-ups / Lat Pulldown": [
-    "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Pullups",
-    "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Close-Grip_Front_Lat_Pulldown"
+  'bench-press': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Bench_Press_-_Medium_Grip'
   ],
-  "Pull-ups": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Pullups"],
-  "Lat Pulldown": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Close-Grip_Front_Lat_Pulldown"],
-  "Barbell Row": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Bent_Over_Barbell_Row"],
-  "Seated Row": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Seated_Cable_Rows"],
-  "Face Pull": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Face_Pull"],
-  "Biceps Curl": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Incline_Inner_Biceps_Curl"],
-  "Incline Bench Press": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip"],
-  "Flat DB Press": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Bench_Press_-_Medium_Grip"],
-  "Cable Fly": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Flat_Bench_Cable_Flyes"],
-  "Deadlift": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Axle_Deadlift"],
-  "Leg Extension + Hamstring Curl": [
-    "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Leg_Extensions",
-    "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Seated_Band_Hamstring_Curl"
+  'squat': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Full_Squat'
   ],
-  "Calf Raises": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Calf_Raises_-_With_Bands"],
-  "DB Bench Press": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Hammer_Grip_Incline_DB_Bench_Press"],
-  "Conditioning Circuit": [
-    "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Mountain_Climbers",
-    "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/One-Arm_Kettlebell_Swings"
+  'pull-ups-lat-pulldown': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Pullups',
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Close-Grip_Front_Lat_Pulldown'
   ],
-  "Hanging Leg Raises": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Hanging_Leg_Raise"],
-  "Plank": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Plank"],
-  "Light Squats": ["https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Full_Squat"]
+  'lateral-raises': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Power_Partials'
+  ],
+  'triceps-pushdown': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Reverse_Grip_Triceps_Pushdown'
+  ],
+  'incline-db-press': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip'
+  ],
+  'romanian-deadlift': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Romanian_Deadlift'
+  ],
+  'barbell-row': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Bent_Over_Barbell_Row'
+  ],
+  'shoulder-press': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Alternating_Cable_Shoulder_Press'
+  ],
+  'biceps-curl': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Incline_Inner_Biceps_Curl'
+  ],
+  'deadlift': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Axle_Deadlift'
+  ],
+  'flat-db-press': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Barbell_Bench_Press_-_Medium_Grip'
+  ],
+  'leg-press': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Calf_Press_On_The_Leg_Press_Machine'
+  ],
+  'face-pull': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Face_Pull'
+  ],
+  'hanging-leg-raises-plank': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Hanging_Leg_Raise',
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Plank'
+  ],
+  'treadmill': [
+    'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/Running_Treadmill'
+  ]
 };
