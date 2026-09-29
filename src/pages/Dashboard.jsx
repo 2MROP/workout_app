@@ -14,7 +14,7 @@ import {
   getDayOfWeekKey,
   formatDisplayDate
 } from '../utils/dateUtils';
-import { calc7DayWeightAvg, calcTotalProtein } from '../utils/calcUtils';
+import { calc7DayWeightAvg, isProteinDayHit } from '../utils/calcUtils';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -76,8 +76,6 @@ export default function Dashboard() {
 
   // Quick stats for top bar
   const todayNutrition = nutritionLogs[todayDateStr] || {};
-  const todayProtein = calcTotalProtein(todayNutrition);
-  const proteinTarget = profile.proteinTarget || 140;
   const current7DayAvg = calc7DayWeightAvg(weightLogs, todayDateStr);
 
   // Backup export reminder (if > 7 days or never)
@@ -97,7 +95,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Let's train <span className="inline-block animate-bounce">🔥</span></h1>
             <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-              Target: 90 kg goal • 140g protein
+              Target: 90 kg goal • 2+ protein meals
             </p>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] text-[var(--color-text-secondary)]">

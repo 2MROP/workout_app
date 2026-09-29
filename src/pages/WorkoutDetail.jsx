@@ -117,17 +117,6 @@ export default function WorkoutDetail() {
     };
   }, [data, targetDateStr, workoutLogs, cardioLogs]);
 
-  useEffect(() => {
-    if (isAllDone) {
-      if (!showCelebration) {
-        setShowCelebration(true);
-        triggerConfetti();
-      }
-    } else {
-      setShowCelebration(false);
-    }
-  }, [isAllDone]);
-
   const triggerConfetti = () => {
     const duration = 3000;
     const end = Date.now() + duration;
@@ -154,6 +143,17 @@ export default function WorkoutDetail() {
     };
     frame();
   };
+
+  useEffect(() => {
+    if (isAllDone) {
+      if (!showCelebration) {
+        setShowCelebration(true);
+        triggerConfetti();
+      }
+    } else {
+      setShowCelebration(false);
+    }
+  }, [isAllDone]);
 
   if (!data) {
     return (
