@@ -24,6 +24,20 @@ test('backup schema: profile contains trackWaist and core fields', () => {
   assert.equal(typeof backup.profile.trackWaist, 'boolean');
 });
 
+test('backup schema: profile and file contain no dead gram-tracking fields or quickFoods', () => {
+  assert.equal(backup.profile.proteinTarget, undefined);
+  assert.equal(backup.profile.proteinMin, undefined);
+  assert.equal(backup.profile.proteinMax, undefined);
+  assert.equal(backup.profile.quickFoods, undefined);
+
+  // Assert entire backup has no leftover protein gram target keys
+  const serialized = JSON.stringify(backup);
+  assert.equal(serialized.includes('proteinTarget'), false);
+  assert.equal(serialized.includes('proteinMin'), false);
+  assert.equal(serialized.includes('proteinMax'), false);
+  assert.equal(serialized.includes('quickFoods'), false);
+});
+
 test('backup schema: top-level log dictionaries are date-keyed (YYYY-MM-DD)', () => {
   const dateKeyRegex = /^\d{4}-\d{2}-\d{2}$/;
 

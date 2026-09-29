@@ -10,19 +10,8 @@ const DEFAULT_PROFILE = {
   currentWeight: 98,
   goalWeight: 90,
   phase2Goal: 85,
-  proteinTarget: 140,
-  proteinMin: 130,
-  proteinMax: 150,
   calorieGuide: 2400,
-  trackWaist: false,
-  quickFoods: [
-    { id: 'egg', label: 'Egg', protein: 6, unit: '1 egg' },
-    { id: 'chicken', label: 'Chicken', protein: 27, unit: '100g' },
-    { id: 'dal', label: 'Dal', protein: 9, unit: '1 bowl' },
-    { id: 'curd', label: 'Curd', protein: 6, unit: '150ml' },
-    { id: 'soya', label: 'Soya Chunks', protein: 20, unit: '40g' },
-    { id: 'milk', label: 'Milk', protein: 8, unit: '1 glass' }
-  ]
+  trackWaist: false
 };
 
 const DEFAULT_STATE = {

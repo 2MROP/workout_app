@@ -12,7 +12,6 @@ import {
 import {
   calc7DayWeightAvg,
   calcWeekWeightAvg,
-  calcTotalProtein,
   isProteinDayHit,
   evaluateWeeklyReview
 } from '../src/utils/calcUtils.js';
@@ -123,7 +122,7 @@ test('calcUtils: evaluateWeeklyReview triggers sweet spot rule', () => {
       '2026-03-21': { mealProteins: { meal1: ['Egg'] } }, // 1 slot -> not hit
       '2026-03-22': { mealProteins: { meal1: ['Chicken'], meal2: ['Egg'] } }
     },
-    profile: { proteinMin: 130 }
+    profile: {}
   };
 
   const review = evaluateWeeklyReview('2026-03-16', state);
@@ -147,7 +146,7 @@ test('calcUtils: Minimum-week mode marks on track with 2 workouts and 4 protein 
       '2026-03-18': { mealProteins: { meal1: ['Egg'], meal2: ['Chicken'] } },
       '2026-03-19': { mealProteins: { meal1: ['Egg'], meal2: ['Chicken'] } }
     },
-    profile: { proteinMin: 130 }
+    profile: {}
   };
 
   const review = evaluateWeeklyReview('2026-03-16', state);

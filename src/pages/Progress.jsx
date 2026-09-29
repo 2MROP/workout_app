@@ -127,7 +127,6 @@ export default function Progress() {
     startWeight: profile.startWeight || 98,
     goalWeight: profile.goalWeight || 90,
     phase2Goal: profile.phase2Goal || 85,
-    proteinTarget: profile.proteinTarget || 140,
     calorieGuide: profile.calorieGuide || 2400,
     trackWaist: Boolean(profile.trackWaist)
   });
@@ -140,7 +139,6 @@ export default function Progress() {
       startWeight: profile.startWeight || 98,
       goalWeight: profile.goalWeight || 90,
       phase2Goal: profile.phase2Goal || 85,
-      proteinTarget: profile.proteinTarget || 140,
       calorieGuide: profile.calorieGuide || 2400,
       trackWaist: Boolean(profile.trackWaist)
     });
@@ -154,7 +152,6 @@ export default function Progress() {
       startWeight: parseFloat(profileForm.startWeight) || 98,
       goalWeight: parseFloat(profileForm.goalWeight) || 90,
       phase2Goal: parseFloat(profileForm.phase2Goal) || 85,
-      proteinTarget: parseInt(profileForm.proteinTarget, 10) || 140,
       calorieGuide: parseInt(profileForm.calorieGuide, 10) || 2400,
       trackWaist: Boolean(profileForm.trackWaist)
     });

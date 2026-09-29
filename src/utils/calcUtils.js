@@ -58,7 +58,6 @@ export const calcWeekWeightAvg = (weightLogs = {}, mondayStr) => {
 
 /**
  * A day counts as "protein day hit" if at least 2 of the 4 meal slots used have 1+ protein chip selected.
- * Also backwards-compatible with legacy numeric protein >= 130g if present.
  */
 export const isProteinDayHit = (nutritionLog = {}) => {
   if (!nutritionLog) return false;
@@ -76,24 +75,7 @@ export const isProteinDayHit = (nutritionLog = {}) => {
     }
   });
 
-  if (slotsWithProtein >= 2) return true;
-
-  // Backwards compatibility for numeric logs
-  const legacyTotal = calcTotalProtein(nutritionLog);
-  if (legacyTotal >= 130) return true;
-
-  return false;
-};
-
-/**
- * Total daily protein from manual entries and quick-add log items (legacy helper)
- */
-export const calcTotalProtein = (nutritionLog = {}) => {
-  if (!nutritionLog) return 0;
-  const manual = parseFloat(nutritionLog.proteinGrams) || 0;
-  const quickList = Array.isArray(nutritionLog.quickEntries) ? nutritionLog.quickEntries : [];
-  const quickTotal = quickList.reduce((acc, item) => acc + (parseFloat(item.protein) || 0), 0);
-  return Math.round(manual + quickTotal);
+  return slotsWithProtein >= 2;
 };
 
 /**
