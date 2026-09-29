@@ -1,5 +1,17 @@
 import { parseLocalDate, getLocalDateString, getWeekDates, getPreviousMonday } from './dateUtils.js';
 
+export const PROTEIN_SOURCES = [
+  'Egg',
+  'Chicken',
+  'Dal',
+  'Curd',
+  'Paneer',
+  'Soya',
+  'Fish',
+  'Milk',
+  'None'
+];
+
 /**
  * Calculates 7-day rolling weight average ending on targetDate.
  * Requires at least 2 entries in that 7-day window, otherwise returns null.
@@ -45,7 +57,36 @@ export const calcWeekWeightAvg = (weightLogs = {}, mondayStr) => {
 };
 
 /**
- * Total daily protein from manual entries and quick-add log items
+ * A day counts as "protein day hit" if at least 2 of the 4 meal slots used have 1+ protein chip selected.
+ * Also backwards-compatible with legacy numeric protein >= 130g if present.
+ */
+export const isProteinDayHit = (nutritionLog = {}) => {
+  if (!nutritionLog) return false;
+  const mealProteins = nutritionLog.mealProteins || {};
+  const slots = ['meal1', 'snack', 'meal2', 'breakfast'];
+  let slotsWithProtein = 0;
+
+  slots.forEach(slot => {
+    const list = mealProteins[slot];
+    if (Array.isArray(list)) {
+      const hasActualProtein = list.some(p => p && p.toLowerCase() !== 'none');
+      if (hasActualProtein) {
+        slotsWithProtein++;
+      }
+    }
+  });
+
+  if (slotsWithProtein >= 2) return true;
+
+  // Backwards compatibility for numeric logs
+  const legacyTotal = calcTotalProtein(nutritionLog);
+  if (legacyTotal >= 130) return true;
+
+  return false;
+};
+
+/**
+ * Total daily protein from manual entries and quick-add log items (legacy helper)
  */
 export const calcTotalProtein = (nutritionLog = {}) => {
   if (!nutritionLog) return 0;
@@ -137,16 +178,14 @@ export const evaluateWeeklyReview = (mondayStr, state = {}) => {
     }
   });
 
-  // 5. Protein Target Days (>= 130g)
-  const targetMin = profile.proteinMin || 130;
+  // 5. Protein Target Days (At least 2 meal slots with protein chips)
   let proteinDaysHit = 0;
   let restaurantMeals = 0;
   let sugaryDrinks = 0;
 
   currentWeekDates.forEach(dateStr => {
     const nut = nutritionLogs[dateStr] || {};
-    const totalProtein = calcTotalProtein(nut);
-    if (totalProtein >= targetMin) {
+    if (isProteinDayHit(nut)) {
       proteinDaysHit++;
     }
     restaurantMeals += parseInt(nut.restaurantCount, 10) || 0;
@@ -154,7 +193,20 @@ export const evaluateWeeklyReview = (mondayStr, state = {}) => {
   });
 
   // 6. Strength Comparison on Compound Lifts
-  const compoundIds = ['bench-press', 'squat', 'deadlift', 'barbell-row'];
+  const compoundIds = [
+    'bench-press',
+    'squat',
+    'deadlift',
+    'barbell-row',
+    'leg-press-squat',
+    'incline-db-press',
+    'lat-pulldown',
+    'romanian-deadlift',
+    'hack-squat-leg-press',
+    'flat-db-press',
+    'chest-supported-row',
+    'squat-hack-leg-press'
+  ];
   let compoundStrengthDippedCount = 0;
   compoundIds.forEach(id => {
     const curBest = getBestSetScore(workoutLogs, id, currentWeekDates);
@@ -173,7 +225,7 @@ export const evaluateWeeklyReview = (mondayStr, state = {}) => {
     type: 'baseline',
     badge: 'Baseline Building',
     title: 'Building your baseline',
-    message: 'Collect at least 2 weeks of consistent weight and waist logs before making adjustments. Stay consistent with the plan!',
+    message: 'Collect at least 2 weeks of consistent weight logs before making adjustments. Stay consistent with the plan!',
     calorieNote: null
   };
 
@@ -196,7 +248,7 @@ export const evaluateWeeklyReview = (mondayStr, state = {}) => {
         badge: 'Rate Warning',
         title: 'Losing fast or strength dipping',
         message: 'Your weight is dropping faster than 0.8 kg/week or performance dipped on compound lifts. To protect lean muscle, consider adding about 150–200 kcal.',
-        calorieNote: '+150 to 200 kcal (e.g. extra rice portion or protein shake)'
+        calorieNote: '+150 to 200 kcal (e.g. extra rice portion or protein source)'
       };
     } else if (wChange <= -0.3 && wChange >= -0.7) {
       // Ideal rate: -0.3 to -0.7 kg/week
@@ -207,8 +259,8 @@ export const evaluateWeeklyReview = (mondayStr, state = {}) => {
         message: 'Your fat loss pace (-0.3 to -0.7 kg/week) is optimal for steady progress while preserving strength. Keep executing!',
         calorieNote: 'Maintain current intake (~2,400 kcal guide)'
       };
-    } else if (Math.abs(wChange) <= 0.2 && waistChange !== null && waistChange < 0) {
-      // Recomposition: flat weight but waist is decreasing
+    } else if (currentWaist !== null && prevWaist !== null && Math.abs(wChange) <= 0.2 && waistChange !== null && waistChange < 0) {
+      // Recomposition: flat weight but waist is decreasing (only when waist data exists)
       recommendation = {
         type: 'recomposition',
         badge: 'Body Recomposition',
@@ -248,7 +300,7 @@ export const evaluateWeeklyReview = (mondayStr, state = {}) => {
         type: 'steady',
         badge: 'Steady Adherence',
         title: 'Steady pace',
-        message: 'Progress is within acceptable weekly variation. Keep hitting your 140g protein and 7k-10k daily step targets.',
+        message: 'Progress is within acceptable weekly variation. Keep hitting your protein-rich meals and 7k-10k daily step targets.',
         calorieNote: 'Maintain plan'
       };
     }

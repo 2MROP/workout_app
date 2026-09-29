@@ -13,6 +13,7 @@ import {
   calc7DayWeightAvg,
   calcWeekWeightAvg,
   calcTotalProtein,
+  isProteinDayHit,
   evaluateWeeklyReview
 } from '../src/utils/calcUtils.js';
 
@@ -49,15 +50,46 @@ test('calcUtils: calc7DayWeightAvg requires >= 2 entries in 7-day window', () =>
   assert.equal(calc7DayWeightAvg(logs2, '2026-03-18'), 98.0);
 });
 
-test('calcUtils: calcTotalProtein sums manual and quick additions', () => {
-  const nut = {
-    proteinGrams: '40',
-    quickEntries: [
-      { id: '1', label: 'Chicken', protein: 27 },
-      { id: '2', label: 'Egg', protein: 6 }
-    ]
+test('calcUtils: isProteinDayHit verifies presence of protein in at least 2 meal slots', () => {
+  // Empty
+  assert.equal(isProteinDayHit({}), false);
+
+  // 1 meal slot with protein
+  const oneSlot = {
+    mealProteins: {
+      meal1: ['Chicken', 'Egg']
+    }
   };
-  assert.equal(calcTotalProtein(nut), 73);
+  assert.equal(isProteinDayHit(oneSlot), false);
+
+  // 2 meal slots with protein
+  const twoSlots = {
+    mealProteins: {
+      meal1: ['Chicken'],
+      meal2: ['Dal']
+    }
+  };
+  assert.equal(isProteinDayHit(twoSlots), true);
+
+  // None selected does not count as protein
+  const noneSlots = {
+    mealProteins: {
+      meal1: ['None'],
+      snack: ['None'],
+      meal2: ['Chicken']
+    }
+  };
+  assert.equal(isProteinDayHit(noneSlots), false);
+
+  // 2 slots with protein + 1 None
+  const mixedSlots = {
+    mealProteins: {
+      meal1: ['Egg'],
+      snack: ['None'],
+      meal2: ['Paneer', 'Curd']
+    }
+  };
+  assert.equal(isProteinDayHit(mixedSlots), true);
 });
 
 test('calcUtils: evaluateWeeklyReview triggers sweet spot rule', () => {
@@ -73,9 +105,9 @@ test('calcUtils: evaluateWeeklyReview triggers sweet spot rule', () => {
       '2026-03-22': 95.5
     },
     workoutLogs: {
-      '2026-03-16': { 'bench-press': [{ completed: true, weight: 70, reps: 8 }] },
-      '2026-03-18': { 'incline-db-press': [{ completed: true, weight: 26, reps: 10 }] },
-      '2026-03-20': { 'deadlift': [{ completed: true, weight: 110, reps: 5 }] }
+      '2026-03-16': { 'leg-press-squat': [{ completed: true, weight: 70, reps: 8 }] },
+      '2026-03-18': { 'hack-squat-leg-press': [{ completed: true, weight: 26, reps: 10 }] },
+      '2026-03-20': { 'squat-hack-leg-press': [{ completed: true, weight: 110, reps: 5 }] }
     },
     cardioLogs: {
       '2026-03-16': { treadmill: { completed: true, minutes: 25 } },
@@ -83,13 +115,13 @@ test('calcUtils: evaluateWeeklyReview triggers sweet spot rule', () => {
       '2026-03-20': { treadmill: { completed: true, minutes: 25 } }
     },
     nutritionLogs: {
-      '2026-03-16': { proteinGrams: 140 },
-      '2026-03-17': { proteinGrams: 135 },
-      '2026-03-18': { proteinGrams: 140 },
-      '2026-03-19': { proteinGrams: 130 },
-      '2026-03-20': { proteinGrams: 140 },
-      '2026-03-21': { proteinGrams: 125 },
-      '2026-03-22': { proteinGrams: 140 }
+      '2026-03-16': { mealProteins: { meal1: ['Egg'], meal2: ['Chicken'] } },
+      '2026-03-17': { mealProteins: { meal1: ['Dal'], meal2: ['Curd'] } },
+      '2026-03-18': { mealProteins: { meal1: ['Fish'], meal2: ['Paneer'] } },
+      '2026-03-19': { mealProteins: { meal1: ['Soya'], meal2: ['Milk'] } },
+      '2026-03-20': { mealProteins: { meal1: ['Chicken'], meal2: ['Dal'] } },
+      '2026-03-21': { mealProteins: { meal1: ['Egg'] } }, // 1 slot -> not hit
+      '2026-03-22': { mealProteins: { meal1: ['Chicken'], meal2: ['Egg'] } }
     },
     profile: { proteinMin: 130 }
   };
@@ -106,14 +138,14 @@ test('calcUtils: Minimum-week mode marks on track with 2 workouts and 4 protein 
   const state = {
     weightLogs: {},
     workoutLogs: {
-      '2026-03-16': { 'bench-press': [{ completed: true }] },
-      '2026-03-18': { 'incline-db-press': [{ completed: true }] }
+      '2026-03-16': { 'leg-press-squat': [{ completed: true }] },
+      '2026-03-18': { 'hack-squat-leg-press': [{ completed: true }] }
     },
     nutritionLogs: {
-      '2026-03-16': { proteinGrams: 140 },
-      '2026-03-17': { proteinGrams: 140 },
-      '2026-03-18': { proteinGrams: 140 },
-      '2026-03-19': { proteinGrams: 140 }
+      '2026-03-16': { mealProteins: { meal1: ['Egg'], meal2: ['Chicken'] } },
+      '2026-03-17': { mealProteins: { meal1: ['Egg'], meal2: ['Chicken'] } },
+      '2026-03-18': { mealProteins: { meal1: ['Egg'], meal2: ['Chicken'] } },
+      '2026-03-19': { mealProteins: { meal1: ['Egg'], meal2: ['Chicken'] } }
     },
     profile: { proteinMin: 130 }
   };
@@ -125,13 +157,12 @@ test('calcUtils: Minimum-week mode marks on track with 2 workouts and 4 protein 
 });
 
 test('persistence: Simulating Monday rollover retains 100% of historical dates', () => {
-  // Simulate data logged across weeks
   const mockStorage = {
     schemaVersion: 1,
     profile: { startWeight: 98 },
     workoutLogs: {
-      '2026-03-09': { 'bench-press': [{ completed: true, weight: 70, reps: 8 }] },
-      '2026-03-16': { 'bench-press': [{ completed: true, weight: 72.5, reps: 8 }] }
+      '2026-03-09': { 'leg-press-squat': [{ completed: true, weight: 70, reps: 8 }] },
+      '2026-03-16': { 'leg-press-squat': [{ completed: true, weight: 72.5, reps: 8 }] }
     },
     cardioLogs: {
       '2026-03-09': { treadmill: { completed: true } }
@@ -142,7 +173,6 @@ test('persistence: Simulating Monday rollover retains 100% of historical dates',
     }
   };
 
-  // Simulate advancing week from 2026-03-09 to 2026-03-16 and 2026-03-23
   const week1Monday = getMondayOfWeek('2026-03-09');
   const week2Monday = getMondayOfWeek('2026-03-16');
   const week3Monday = getMondayOfWeek('2026-03-23');
@@ -150,7 +180,6 @@ test('persistence: Simulating Monday rollover retains 100% of historical dates',
   assert.notEqual(week1Monday, week2Monday);
   assert.notEqual(week2Monday, week3Monday);
 
-  // In fitness_v2, data is keyed by date and NO auto-wipe exists
   assert.ok(mockStorage.workoutLogs['2026-03-09']);
   assert.ok(mockStorage.workoutLogs['2026-03-16']);
   assert.equal(mockStorage.weightLogs['2026-03-09'], 98.0);
@@ -164,11 +193,10 @@ test('backup: export and import round-trip restores complete data state', () => 
       age: 22,
       height: 188,
       startWeight: 98,
-      goalWeight: 90,
-      proteinTarget: 140
+      goalWeight: 90
     },
     workoutLogs: {
-      '2026-03-16': { 'bench-press': [{ completed: true, weight: 80, reps: 8 }] }
+      '2026-03-16': { 'leg-press-squat': [{ completed: true, weight: 80, reps: 8 }] }
     },
     cardioLogs: {
       '2026-03-16': { treadmill: { completed: true, minutes: 25 } }
@@ -183,7 +211,7 @@ test('backup: export and import round-trip restores complete data state', () => 
       '2026-03-16': 95.5
     },
     nutritionLogs: {
-      '2026-03-16': { proteinGrams: 140 }
+      '2026-03-16': { mealProteins: { meal1: ['Chicken'], meal2: ['Egg'] } }
     },
     meta: {
       lastExportDate: '2026-03-16'

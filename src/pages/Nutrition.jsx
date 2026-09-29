@@ -3,14 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
-  Flame,
   Plus,
   Minus,
-  RotateCcw,
   Sparkles,
-  Info,
-  Check,
-  ChevronDown
+  Utensils
 } from 'lucide-react';
 
 import PageTransition from '../components/PageTransition';
@@ -21,7 +17,7 @@ import {
   formatDisplayDate,
   parseLocalDate
 } from '../utils/dateUtils';
-import { calcTotalProtein } from '../utils/calcUtils';
+import { PROTEIN_SOURCES, isProteinDayHit } from '../utils/calcUtils';
 
 export default function Nutrition() {
   const { nutritionLogs, profile, logNutrition } = useAppContext();
@@ -44,71 +40,62 @@ export default function Nutrition() {
 
   // Active date's nutrition log
   const currentLog = nutritionLogs[selectedDate] || {};
-  const totalProtein = calcTotalProtein(currentLog);
-  const proteinTarget = profile.proteinTarget || 140;
-  const isTargetMet = totalProtein >= (profile.proteinMin || 130);
+  const mealProteins = currentLog.mealProteins || {};
+  const mealsData = currentLog.meals || {};
+  const sizesData = currentLog.mealSizes || {};
+  const carbsData = currentLog.mealCarbs || {};
 
-  // Manual protein input state
-  const [manualGrams, setManualGrams] = useState('');
+  // Count meal slots that have at least 1 actual protein source selected
+  const mealSlotsList = ['meal1', 'snack', 'meal2', 'breakfast'];
+  const proteinSlotsCount = mealSlotsList.filter(s => {
+    const list = mealProteins[s];
+    return Array.isArray(list) && list.some(p => p && p.toLowerCase() !== 'none');
+  }).length;
 
-  // Breakfast collapse state
+  const isTargetHit = isProteinDayHit(currentLog);
+
+  // Breakfast collapse state (open if any breakfast data exists)
   const [showBreakfast, setShowBreakfast] = useState(
-    Boolean(currentLog.meals?.breakfast || currentLog.mealCarbs?.breakfast)
+    Boolean(
+      mealsData.breakfast ||
+      carbsData.breakfast ||
+      (Array.isArray(mealProteins.breakfast) && mealProteins.breakfast.length > 0)
+    )
   );
 
-  // Quick foods from profile
-  const quickFoods = profile.quickFoods || [
-    { id: 'egg', label: 'Egg', protein: 6, unit: '1 egg' },
-    { id: 'chicken', label: 'Chicken', protein: 27, unit: '100g' },
-    { id: 'dal', label: 'Dal', protein: 9, unit: '1 bowl' },
-    { id: 'curd', label: 'Curd', protein: 6, unit: '150ml' },
-    { id: 'soya', label: 'Soya Chunks', protein: 20, unit: '40g' },
-    { id: 'milk', label: 'Milk', protein: 8, unit: '1 glass' }
-  ];
-
-  // Quick add food action
-  const handleQuickAdd = (food) => {
+  // Toggle protein source chip for a specific meal
+  const toggleProteinSource = (slotKey, source) => {
     logNutrition(selectedDate, prev => {
-      const currentList = Array.isArray(prev.quickEntries) ? prev.quickEntries : [];
+      const prevMealProteins = prev.mealProteins || {};
+      const currentList = Array.isArray(prevMealProteins[slotKey]) ? prevMealProteins[slotKey] : [];
+
+      let updatedList;
+      if (source === 'None') {
+        if (currentList.includes('None')) {
+          updatedList = [];
+        } else {
+          updatedList = ['None'];
+        }
+      } else {
+        const withoutNone = currentList.filter(s => s !== 'None');
+        if (withoutNone.includes(source)) {
+          updatedList = withoutNone.filter(s => s !== source);
+        } else {
+          updatedList = [...withoutNone, source];
+        }
+      }
+
       return {
         ...prev,
-        quickEntries: [
-          ...currentList,
-          {
-            uid: Date.now() + Math.random(),
-            id: food.id,
-            label: food.label,
-            protein: food.protein
-          }
-        ]
+        mealProteins: {
+          ...prevMealProteins,
+          [slotKey]: updatedList
+        }
       };
     });
   };
 
-  // Remove specific quick entry
-  const handleRemoveEntry = (uid) => {
-    logNutrition(selectedDate, prev => {
-      const currentList = Array.isArray(prev.quickEntries) ? prev.quickEntries : [];
-      return {
-        ...prev,
-        quickEntries: currentList.filter(item => item.uid !== uid)
-      };
-    });
-  };
-
-  // Add manual protein grams
-  const handleAddManualProtein = () => {
-    const val = parseFloat(manualGrams);
-    if (!isNaN(val) && val > 0) {
-      logNutrition(selectedDate, prev => ({
-        ...prev,
-        proteinGrams: (parseFloat(prev.proteinGrams) || 0) + val
-      }));
-      setManualGrams('');
-    }
-  };
-
-  // Meal slots update helper
+  // Meal notes update helpers
   const updateMealNote = (slot, text) => {
     logNutrition(selectedDate, prev => ({
       ...prev,
@@ -151,19 +138,18 @@ export default function Nutrition() {
     });
   };
 
-  const mealsData = currentLog.meals || {};
-  const sizesData = currentLog.mealSizes || {};
-  const carbsData = currentLog.mealCarbs || {};
-
   const renderMealSlot = (slotKey, slotLabel, isOptional = false) => {
     const note = mealsData[slotKey] || '';
     const size = sizesData[slotKey] || 'M';
     const carb = carbsData[slotKey] || '';
+    const selectedProteins = Array.isArray(mealProteins[slotKey]) ? mealProteins[slotKey] : [];
 
     return (
-      <div className="p-3 rounded-xl bg-[var(--color-background)] border border-[var(--color-surface-border)] space-y-2.5">
+      <div className="p-3.5 rounded-xl bg-[var(--color-background)] border border-[var(--color-surface-border)] space-y-3">
+        {/* Slot Title + S/M/L Pill */}
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-white flex items-center gap-1.5">
+            <Utensils size={13} className="text-[var(--color-primary)]" />
             {slotLabel}
             {isOptional && (
               <span className="text-[10px] text-[var(--color-text-secondary)] font-normal">(Optional)</span>
@@ -189,23 +175,59 @@ export default function Nutrition() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          {/* Note Input */}
+        {/* Primary Input: What did you eat? */}
+        <div>
+          <label className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold block mb-1">
+            What did you eat?
+          </label>
           <input
             type="text"
-            placeholder="e.g. Rice, chicken, dal"
+            placeholder="e.g. Chicken biryani with raita, or 3 dosas with egg curry"
             value={note}
             onChange={(e) => updateMealNote(slotKey, e.target.value)}
-            className="col-span-2 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-primary)]"
+            className="w-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-primary)]"
           />
+        </div>
 
-          {/* Main Carb Field */}
+        {/* Protein Source Toggle Chips */}
+        <div>
+          <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold block mb-1.5">
+            Protein Sources (Multi-select)
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {PROTEIN_SOURCES.map(source => {
+              const isSelected = selectedProteins.includes(source);
+              const isNone = source === 'None';
+
+              return (
+                <button
+                  key={source}
+                  type="button"
+                  onClick={() => toggleProteinSource(slotKey, source)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${
+                    isSelected
+                      ? isNone
+                        ? 'bg-[var(--color-surface-hover)] text-gray-300 border border-[var(--color-surface-border)]'
+                        : 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border border-[var(--color-primary)]/50 shadow-[var(--shadow-glow)] font-semibold'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-white border border-[var(--color-surface-border)]'
+                  }`}
+                >
+                  {isSelected && !isNone && '✓ '}
+                  {source}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Main Carb Field */}
+        <div className="pt-1">
           <input
             type="text"
-            placeholder="Carb: e.g. 2 roti"
+            placeholder="Main carb: e.g. 2 chapathi, 1.5 cup rice, 3 idlis"
             value={carb}
             onChange={(e) => updateMealCarb(slotKey, e.target.value)}
-            className="col-span-1 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-lg px-2 py-1.5 text-[11px] text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-primary)]"
+            className="w-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-lg px-2.5 py-1.5 text-[11px] text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-primary)]"
           />
         </div>
       </div>
@@ -219,9 +241,9 @@ export default function Nutrition() {
         {/* Top Header & Date Switcher */}
         <div className="pt-2 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Food & Protein</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Food & Meals</h1>
             <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-              Target 140g • Under 1-min quick logging
+              Meal notes & protein sources • Under 1-min logging
             </p>
           </div>
 
@@ -265,120 +287,50 @@ export default function Nutrition() {
           </button>
         </div>
 
-        {/* Protein Tracker Card */}
-        <Card isGlowing={isTargetMet} className="space-y-4">
+        {/* Daily Protein Target Status Card */}
+        <Card isGlowing={isTargetHit} className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
-                Daily Protein Goal
+                Daily Protein Target
               </span>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-3xl font-bold font-mono text-[var(--color-primary)]">
-                  {totalProtein}
-                </span>
-                <span className="text-xs text-[var(--color-text-secondary)] font-mono">
-                  / {proteinTarget} g
+                <span className="text-2xl font-bold font-mono text-white">
+                  {proteinSlotsCount} <span className="text-sm font-normal text-[var(--color-text-secondary)]">/ 2+ meals with protein</span>
                 </span>
               </div>
             </div>
 
-            {isTargetMet ? (
+            {isTargetHit ? (
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/40 text-[var(--color-primary)] text-xs font-bold shadow-[var(--shadow-glow)]">
                 <Sparkles size={14} />
-                <span>On Target!</span>
+                <span>Target Hit!</span>
               </div>
             ) : (
               <span className="text-xs text-[var(--color-text-secondary)] font-mono">
-                {Math.max(0, 130 - totalProtein)}g to min target (130g)
+                {2 - proteinSlotsCount} more meal needed
               </span>
             )}
           </div>
 
-          {/* Progress Gauge */}
-          <div className="w-full bg-[var(--color-background)] h-2.5 rounded-full overflow-hidden border border-[var(--color-surface-border)]">
+          <div className="w-full bg-[var(--color-background)] h-2 rounded-full overflow-hidden border border-[var(--color-surface-border)]">
             <motion.div
               className="h-full bg-[var(--color-primary)] shadow-[var(--shadow-glow)]"
               initial={{ width: 0 }}
-              animate={{ width: `${Math.min(100, (totalProtein / proteinTarget) * 100)}%` }}
+              animate={{ width: `${Math.min(100, (proteinSlotsCount / 2) * 100)}%` }}
               transition={{ type: 'spring', damping: 20 }}
             />
           </div>
-
-          {/* Quick-Add Buttons Grid */}
-          <div className="pt-2">
-            <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold block mb-2">
-              Tap to Quick-Add
-            </span>
-            <div className="grid grid-cols-3 gap-2">
-              {quickFoods.map(food => (
-                <motion.button
-                  key={food.id}
-                  whileTap={{ scale: 0.94 }}
-                  onClick={() => handleQuickAdd(food)}
-                  className="p-2 rounded-xl bg-[var(--color-background)] border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/50 text-left transition-colors flex flex-col justify-between"
-                >
-                  <span className="text-[11px] font-bold text-white truncate">
-                    +{food.label}
-                  </span>
-                  <div className="flex items-center justify-between mt-1 text-[10px] text-[var(--color-primary)] font-mono font-semibold">
-                    <span>+{food.protein}g</span>
-                    <Plus size={10} />
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-
-          {/* Manual Input Row */}
-          <div className="flex gap-2 pt-1">
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="+ custom grams (e.g. 25)"
-              value={manualGrams}
-              onChange={(e) => setManualGrams(e.target.value.replace(/[^0-9]/g, ''))}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddManualProtein()}
-              className="flex-1 bg-[var(--color-background)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-primary)] font-mono"
-            />
-            <button
-              onClick={handleAddManualProtein}
-              className="px-4 py-2 bg-[var(--color-surface-hover)] hover:bg-[var(--color-surface-border)] text-xs font-bold rounded-xl transition-colors text-white"
-            >
-              Add
-            </button>
-          </div>
-
-          {/* Today's Added Chips List with Remove option */}
-          {Array.isArray(currentLog.quickEntries) && currentLog.quickEntries.length > 0 && (
-            <div className="pt-2 border-t border-[var(--color-surface-border)]">
-              <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold block mb-1.5">
-                Logged Today ({currentLog.quickEntries.length} items)
-              </span>
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                {currentLog.quickEntries.map(item => (
-                  <span
-                    key={item.uid}
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--color-background)] border border-[var(--color-surface-border)] text-[11px] font-mono text-white"
-                  >
-                    <span>{item.label} (+{item.protein}g)</span>
-                    <button
-                      onClick={() => handleRemoveEntry(item.uid)}
-                      className="text-[var(--color-text-secondary)] hover:text-rose-400"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          <p className="text-[11px] text-[var(--color-text-secondary)]">
+            Target hit when at least 2 meal slots include 1+ protein source.
+          </p>
         </Card>
 
-        {/* Meals Section */}
-        <Card className="space-y-3">
+        {/* Meal Slots Section */}
+        <Card className="space-y-3.5">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-base">Daily Meals</h3>
-            <span className="text-[10px] text-[var(--color-text-secondary)]">Size & carb tracking</span>
+            <h3 className="font-bold text-base">Meal Entries</h3>
+            <span className="text-[10px] text-[var(--color-text-secondary)]">Text notes + chips</span>
           </div>
 
           {renderMealSlot('meal1', 'Meal 1')}
@@ -390,7 +342,7 @@ export default function Nutrition() {
             <button
               type="button"
               onClick={() => setShowBreakfast(true)}
-              className="w-full py-2 border border-dashed border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/40 rounded-xl text-xs text-[var(--color-text-secondary)] hover:text-white flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full py-2.5 border border-dashed border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/40 rounded-xl text-xs text-[var(--color-text-secondary)] hover:text-white flex items-center justify-center gap-1.5 transition-colors"
             >
               <Plus size={14} />
               <span>Add Breakfast (Optional)</span>

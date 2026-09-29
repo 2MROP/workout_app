@@ -128,18 +128,26 @@ export default function Dashboard() {
             className="p-3.5 flex flex-col justify-between"
           >
             <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
-              Today's Protein
+              Today's Meals
             </span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className={`text-xl font-bold font-mono ${todayProtein >= 130 ? 'text-[var(--color-primary)]' : 'text-white'}`}>
-                {todayProtein}
+              <span className={`text-base font-bold font-mono ${isProteinDayHit(todayNutrition) ? 'text-[var(--color-primary)]' : 'text-white'}`}>
+                {['meal1', 'snack', 'meal2', 'breakfast'].filter(s => {
+                  const list = todayNutrition.mealProteins?.[s];
+                  return Array.isArray(list) && list.some(p => p && p.toLowerCase() !== 'none');
+                }).length}
               </span>
-              <span className="text-xs text-[var(--color-text-secondary)]">/ {proteinTarget}g</span>
+              <span className="text-xs text-[var(--color-text-secondary)]">/ 2+ protein meals</span>
             </div>
             <div className="w-full bg-[var(--color-surface-border)] h-1 rounded-full mt-2 overflow-hidden">
               <div 
                 className="h-full bg-[var(--color-primary)]"
-                style={{ width: `${Math.min(100, (todayProtein / proteinTarget) * 100)}%` }}
+                style={{
+                  width: `${Math.min(100, (['meal1', 'snack', 'meal2', 'breakfast'].filter(s => {
+                    const list = todayNutrition.mealProteins?.[s];
+                    return Array.isArray(list) && list.some(p => p && p.toLowerCase() !== 'none');
+                  }).length / 2) * 100)}%`
+                }}
               />
             </div>
           </Card>
