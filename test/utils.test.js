@@ -156,6 +156,29 @@ test('calcUtils: Minimum-week mode marks on track with 2 workouts and 4 protein 
   assert.equal(review.isMinimumAchieved, true);
 });
 
+test('calcUtils: evaluateWeeklyReview handles absent waist logs gracefully without triggering recomposition', () => {
+  const state = {
+    weightLogs: {
+      '2026-03-10': 98.0,
+      '2026-03-12': 98.0,
+      '2026-03-17': 98.0,
+      '2026-03-19': 98.0
+    },
+    waistLogs: {},
+    workoutLogs: {},
+    cardioLogs: {},
+    nutritionLogs: {},
+    profile: {}
+  };
+
+  const review = evaluateWeeklyReview('2026-03-16', state);
+  assert.equal(review.currentWaist, null);
+  assert.equal(review.prevWaist, null);
+  assert.equal(review.waistChange, null);
+  // Recomposition should NOT trigger since waist data is missing
+  assert.notEqual(review.recommendation.type, 'recomposition');
+});
+
 test('persistence: Simulating Monday rollover retains 100% of historical dates', () => {
   const mockStorage = {
     schemaVersion: 1,

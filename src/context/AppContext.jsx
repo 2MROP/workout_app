@@ -14,6 +14,7 @@ const DEFAULT_PROFILE = {
   proteinMin: 130,
   proteinMax: 150,
   calorieGuide: 2400,
+  trackWaist: false,
   quickFoods: [
     { id: 'egg', label: 'Egg', protein: 6, unit: '1 egg' },
     { id: 'chicken', label: 'Chicken', protein: 27, unit: '100g' },

@@ -61,6 +61,9 @@ export default function Progress() {
   const currentMonday = getMondayOfWeek(todayStr);
   const currentWeekDates = getWeekDates(currentMonday);
 
+  // Track waist toggle setting from profile (default OFF)
+  const trackWaistEnabled = Boolean(profile.trackWaist);
+
   // Weight form state
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const currentLoggedWeight = weightLogs[selectedDate] !== undefined ? String(weightLogs[selectedDate]) : '';
@@ -108,8 +111,9 @@ export default function Progress() {
   // Check if waist was logged for current week
   const hasLoggedWaistThisWeek = currentWeekDates.some(d => waistLogs[d] !== undefined);
 
-  // 7-day average for selected date
+  // 7-day average for selected date and today
   const selected7DayAvg = calc7DayWeightAvg(weightLogs, selectedDate);
+  const today7DayAvg = calc7DayWeightAvg(weightLogs, todayStr);
 
   // Import modal & feedback state
   const [importModalData, setImportModalData] = useState(null);
@@ -124,8 +128,23 @@ export default function Progress() {
     goalWeight: profile.goalWeight || 90,
     phase2Goal: profile.phase2Goal || 85,
     proteinTarget: profile.proteinTarget || 140,
-    calorieGuide: profile.calorieGuide || 2400
+    calorieGuide: profile.calorieGuide || 2400,
+    trackWaist: Boolean(profile.trackWaist)
   });
+
+  // Keep form state in sync with profile
+  React.useEffect(() => {
+    setProfileForm({
+      age: profile.age || 22,
+      height: profile.height || 188,
+      startWeight: profile.startWeight || 98,
+      goalWeight: profile.goalWeight || 90,
+      phase2Goal: profile.phase2Goal || 85,
+      proteinTarget: profile.proteinTarget || 140,
+      calorieGuide: profile.calorieGuide || 2400,
+      trackWaist: Boolean(profile.trackWaist)
+    });
+  }, [profile]);
 
   const handleProfileSave = (e) => {
     e.preventDefault();
@@ -136,9 +155,21 @@ export default function Progress() {
       goalWeight: parseFloat(profileForm.goalWeight) || 90,
       phase2Goal: parseFloat(profileForm.phase2Goal) || 85,
       proteinTarget: parseInt(profileForm.proteinTarget, 10) || 140,
-      calorieGuide: parseInt(profileForm.calorieGuide, 10) || 2400
+      calorieGuide: parseInt(profileForm.calorieGuide, 10) || 2400,
+      trackWaist: Boolean(profileForm.trackWaist)
     });
     setFeedbackMessage({ type: 'success', text: 'Profile saved successfully!' });
+    setTimeout(() => setFeedbackMessage(null), 3000);
+  };
+
+  const handleToggleTrackWaist = () => {
+    const nextVal = !profileForm.trackWaist;
+    setProfileForm(prev => ({ ...prev, trackWaist: nextVal }));
+    updateProfile({ trackWaist: nextVal });
+    setFeedbackMessage({
+      type: 'success',
+      text: nextVal ? 'Waist tracking enabled.' : 'Waist tracking disabled.'
+    });
     setTimeout(() => setFeedbackMessage(null), 3000);
   };
 
@@ -283,7 +314,7 @@ export default function Progress() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Progress & Review</h1>
             <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-              Weight trend, waist measurement, and weekly review
+              Weight trend, 7-day average, and weekly review
             </p>
           </div>
         </div>
@@ -317,7 +348,7 @@ export default function Progress() {
                 : 'text-[var(--color-text-secondary)] hover:text-white'
             }`}
           >
-            Weight & Waist
+            Weight Trend
           </button>
           <button
             onClick={() => setTab('review')}
@@ -341,101 +372,47 @@ export default function Progress() {
           </button>
         </div>
 
-        {/* TAB 1: WEIGHT & WAIST */}
+        {/* TAB 1: WEIGHT (PRIMARY & PROMINENT) */}
         {activeTab === 'weight' && (
           <div className="space-y-5">
             
-            {/* Required Waist Warning Banner */}
-            {!hasLoggedWaistThisWeek && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs"
-              >
-                <AlertCircle size={18} className="shrink-0 text-amber-400 mt-0.5" />
-                <div>
-                  <span className="font-bold">Required weekly entry:</span> Please log your waist measurement for this week. It verifies fat loss regardless of scale water retention.
-                </div>
-              </motion.div>
-            )}
-
-            {/* Log Morning Weight Card */}
-            <Card className="space-y-4">
+            {/* 1. Hero 7-Day Rolling Average Highlight Card (Most Prominent) */}
+            <Card isGlowing={true} className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingDown size={18} className="text-[var(--color-accent)]" />
-                  <h3 className="font-bold text-base">Morning Weight Log</h3>
-                </div>
-                <span className="text-[11px] text-[var(--color-text-secondary)]">3-4 mornings / wk</span>
+                <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+                  7-Day Rolling Weight Average
+                </span>
+                <span className="text-[10px] text-[var(--color-primary)] font-mono font-semibold">
+                  Phase 1 Goal: {profile.goalWeight || 90} kg
+                </span>
               </div>
 
-              <div className="flex gap-2">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-[var(--color-background)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[var(--color-accent)]"
-                />
-
-                <div className="flex-1 flex gap-2">
-                  <div className="flex-1 flex items-center bg-[var(--color-background)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2">
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="e.g. 97.8"
-                      value={weightInput}
-                      onChange={(e) => setWeightInput(e.target.value.replace(/[^0-9.]/g, ''))}
-                      onBlur={() => {
-                        const val = parseFloat(weightInput);
-                        logWeight(selectedDate, isNaN(val) ? '' : val);
-                      }}
-                      className="w-full bg-transparent text-sm font-mono text-white focus:outline-none"
-                    />
-                    <span className="text-xs text-[var(--color-text-secondary)] ml-1">kg</span>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      const val = parseFloat(weightInput);
-                      logWeight(selectedDate, isNaN(val) ? '' : val);
-                      setFeedbackMessage({ type: 'success', text: `Saved weight for ${formatDisplayDate(selectedDate)}` });
-                      setTimeout(() => setFeedbackMessage(null), 2500);
-                    }}
-                    className="px-4 py-2 bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/30 rounded-xl text-xs font-bold hover:bg-[var(--color-accent)]/25 transition-colors"
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-
-              {/* 7-Day Average Metric */}
-              <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
-                    7-Day Rolling Average
+              <div className="flex items-baseline justify-between">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-extrabold font-mono text-[var(--color-primary)]">
+                    {today7DayAvg !== null ? today7DayAvg : (selected7DayAvg !== null ? selected7DayAvg : '--')}
                   </span>
-                  <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                    Smooths out daily water & glycogen swings
-                  </p>
+                  <span className="text-sm font-semibold text-[var(--color-text-secondary)]">kg</span>
                 </div>
-                <div className="text-right">
-                  {selected7DayAvg !== null ? (
-                    <span className="text-lg font-bold font-mono text-[var(--color-primary)]">
-                      {selected7DayAvg} <span className="text-xs font-normal text-white">kg</span>
-                    </span>
-                  ) : (
-                    <span className="text-xs text-[var(--color-text-secondary)] italic">
-                      Need 2+ entries
-                    </span>
-                  )}
-                </div>
+                {today7DayAvg !== null && (
+                  <span className="text-xs text-[var(--color-text-secondary)] font-mono">
+                    {Number((today7DayAvg - (profile.goalWeight || 90)).toFixed(1))} kg to goal
+                  </span>
+                )}
               </div>
+
+              <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">
+                Daily weight fluctuates with water, salt, and carbs. Focus on this 7-day average trend line.
+              </p>
             </Card>
 
-            {/* Pure-SVG Weight Trend Graph */}
+            {/* 2. Pure-SVG Weight Trend Graph */}
             <Card className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm">Weight & Trend Graph</h3>
+                <div className="flex items-center gap-2">
+                  <TrendingDown size={16} className="text-[var(--color-accent)]" />
+                  <h3 className="font-bold text-sm">Trend Graph & Goals</h3>
+                </div>
                 <div className="flex items-center gap-3 text-[10px]">
                   <span className="flex items-center gap-1 text-[var(--color-accent)]">
                     <span className="w-2.5 h-0.5 bg-[var(--color-accent)] inline-block"></span> Daily
@@ -444,7 +421,7 @@ export default function Progress() {
                     <span className="w-2.5 h-0.5 bg-[var(--color-primary)] inline-block"></span> 7d Avg
                   </span>
                   <span className="flex items-center gap-1 text-amber-400">
-                    <span className="w-2.5 h-0.5 bg-amber-400 border-dashed inline-block"></span> Goal
+                    <span className="w-2.5 h-0.5 bg-amber-400 border-dashed inline-block"></span> 90 kg
                   </span>
                 </div>
               </div>
@@ -549,30 +526,25 @@ export default function Progress() {
               ) : (
                 <div className="p-8 text-center bg-[var(--color-background)] rounded-xl border border-[var(--color-surface-border)]">
                   <p className="text-xs text-[var(--color-text-secondary)]">
-                    No weight entries yet. Log your morning weight above to draw your trend graph!
+                    No weight entries yet. Log your morning weight below to draw your trend graph!
                   </p>
                 </div>
               )}
             </Card>
 
-            {/* Weekly Waist Measurement Card */}
+            {/* 3. Quick Morning Weight Log Entry */}
             <Card className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Ruler size={18} className="text-[var(--color-primary)]" />
-                  <h3 className="font-bold text-base">Weekly Waist Measurement</h3>
-                </div>
-                <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                  Required Weekly
-                </span>
+                <h3 className="font-bold text-sm">Log Morning Weight</h3>
+                <span className="text-[11px] text-[var(--color-text-secondary)]">3-4 mornings / wk</span>
               </div>
 
               <div className="flex gap-2">
                 <input
                   type="date"
-                  value={waistDate}
-                  onChange={(e) => setWaistDate(e.target.value)}
-                  className="bg-[var(--color-background)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="bg-[var(--color-background)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[var(--color-accent)]"
                 />
 
                 <div className="flex-1 flex gap-2">
@@ -580,77 +552,148 @@ export default function Progress() {
                     <input
                       type="text"
                       inputMode="decimal"
-                      placeholder="e.g. 96"
-                      value={waistInput}
-                      onChange={(e) => setWaistInput(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder="e.g. 97.8"
+                      value={weightInput}
+                      onChange={(e) => setWeightInput(e.target.value.replace(/[^0-9.]/g, ''))}
                       onBlur={() => {
-                        const val = parseFloat(waistInput);
-                        logWaist(waistDate, isNaN(val) ? '' : val);
+                        const val = parseFloat(weightInput);
+                        logWeight(selectedDate, isNaN(val) ? '' : val);
                       }}
                       className="w-full bg-transparent text-sm font-mono text-white focus:outline-none"
                     />
-                    <span className="text-xs text-[var(--color-text-secondary)] ml-1">cm</span>
+                    <span className="text-xs text-[var(--color-text-secondary)] ml-1">kg</span>
                   </div>
 
                   <button
                     onClick={() => {
-                      const val = parseFloat(waistInput);
-                      logWaist(waistDate, isNaN(val) ? '' : val);
-                      setFeedbackMessage({ type: 'success', text: `Saved waist for ${formatDisplayDate(waistDate)}` });
+                      const val = parseFloat(weightInput);
+                      logWeight(selectedDate, isNaN(val) ? '' : val);
+                      setFeedbackMessage({ type: 'success', text: `Saved weight for ${formatDisplayDate(selectedDate)}` });
                       setTimeout(() => setFeedbackMessage(null), 2500);
                     }}
-                    className="px-4 py-2 bg-[var(--color-primary)]/15 text-[var(--color-primary)] border border-[var(--color-primary)]/30 rounded-xl text-xs font-bold hover:bg-[var(--color-primary)]/25 transition-colors"
+                    className="px-4 py-2 bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/30 rounded-xl text-xs font-bold hover:bg-[var(--color-accent)]/25 transition-colors"
                   >
                     Save
                   </button>
                 </div>
               </div>
-
-              {/* Waist History List */}
-              {waistHistory.length > 0 && (
-                <div className="space-y-1.5 pt-2 border-t border-[var(--color-surface-border)]">
-                  <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
-                    Recent Waist Logs
-                  </span>
-                  {waistHistory.map((item, idx) => {
-                    const prevItem = waistHistory[idx + 1];
-                    const delta = prevItem ? Number((item.waist - prevItem.waist).toFixed(1)) : null;
-
-                    return (
-                      <div
-                        key={item.dateStr}
-                        className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-[var(--color-background)]"
-                      >
-                        <span className="text-[var(--color-text-secondary)] font-mono">
-                          {formatDisplayDate(item.dateStr, { month: 'short', day: 'numeric' })}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold font-mono">{item.waist} cm</span>
-                          {delta !== null && (
-                            <span
-                              className={`text-[10px] font-bold font-mono px-1.5 py-0.2 rounded ${
-                                delta < 0
-                                  ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10'
-                                  : delta > 0
-                                  ? 'text-amber-400 bg-amber-500/10'
-                                  : 'text-gray-400'
-                              }`}
-                            >
-                              {delta > 0 ? `+${delta}` : delta} cm
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </Card>
+
+            {/* 4. Optional Waist Section (Only when trackWaistEnabled is true) */}
+            {trackWaistEnabled && (
+              <>
+                {/* Required Waist Warning Banner (Only when trackWaist is enabled) */}
+                {!hasLoggedWaistThisWeek && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs"
+                  >
+                    <AlertCircle size={18} className="shrink-0 text-amber-400 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Weekly waist log:</span> Please log your waist measurement for this week.
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Waist Measurement Card */}
+                <Card className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Ruler size={18} className="text-[var(--color-primary)]" />
+                      <h3 className="font-bold text-base">Weekly Waist Measurement</h3>
+                    </div>
+                    <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                      Weekly Log
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={waistDate}
+                      onChange={(e) => setWaistDate(e.target.value)}
+                      className="bg-[var(--color-background)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                    />
+
+                    <div className="flex-1 flex gap-2">
+                      <div className="flex-1 flex items-center bg-[var(--color-background)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="e.g. 96"
+                          value={waistInput}
+                          onChange={(e) => setWaistInput(e.target.value.replace(/[^0-9.]/g, ''))}
+                          onBlur={() => {
+                            const val = parseFloat(waistInput);
+                            logWaist(waistDate, isNaN(val) ? '' : val);
+                          }}
+                          className="w-full bg-transparent text-sm font-mono text-white focus:outline-none"
+                        />
+                        <span className="text-xs text-[var(--color-text-secondary)] ml-1">cm</span>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const val = parseFloat(waistInput);
+                          logWaist(waistDate, isNaN(val) ? '' : val);
+                          setFeedbackMessage({ type: 'success', text: `Saved waist for ${formatDisplayDate(waistDate)}` });
+                          setTimeout(() => setFeedbackMessage(null), 2500);
+                        }}
+                        className="px-4 py-2 bg-[var(--color-primary)]/15 text-[var(--color-primary)] border border-[var(--color-primary)]/30 rounded-xl text-xs font-bold hover:bg-[var(--color-primary)]/25 transition-colors"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Waist History List */}
+                  {waistHistory.length > 0 && (
+                    <div className="space-y-1.5 pt-2 border-t border-[var(--color-surface-border)]">
+                      <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+                        Recent Waist Logs
+                      </span>
+                      {waistHistory.map((item, idx) => {
+                        const prevItem = waistHistory[idx + 1];
+                        const delta = prevItem ? Number((item.waist - prevItem.waist).toFixed(1)) : null;
+
+                        return (
+                          <div
+                            key={item.dateStr}
+                            className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-[var(--color-background)]"
+                          >
+                            <span className="text-[var(--color-text-secondary)] font-mono">
+                              {formatDisplayDate(item.dateStr, { month: 'short', day: 'numeric' })}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold font-mono">{item.waist} cm</span>
+                              {delta !== null && (
+                                <span
+                                  className={`text-[10px] font-bold font-mono px-1.5 py-0.2 rounded ${
+                                    delta < 0
+                                      ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10'
+                                      : delta > 0
+                                      ? 'text-amber-400 bg-amber-500/10'
+                                      : 'text-gray-400'
+                                  }`}
+                                >
+                                  {delta > 0 ? `+${delta}` : delta} cm
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Card>
+              </>
+            )}
 
           </div>
         )}
 
-        {/* TAB 2: WEEKLY REVIEW (STAGE 5) */}
+        {/* TAB 2: WEEKLY REVIEW */}
         {activeTab === 'review' && (
           <div className="space-y-5">
             
@@ -693,13 +736,13 @@ export default function Progress() {
                     On Track (Minimum Target Achieved) 🎯
                   </h4>
                   <p className="text-xs text-white/90 mt-0.5 leading-relaxed">
-                    You hit at least 2 full workouts and reached your protein target on 4+ days. That counts as an on-track week!
+                    You completed at least 2 full workouts and hit your protein target on 4+ days. That counts as an on-track week!
                   </p>
                 </div>
               </motion.div>
             )}
 
-            {/* 6 Key Weekly Metrics Grid */}
+            {/* Weekly Metrics Grid (Waist card is ONLY rendered if waist data exists for this week) */}
             <div className="grid grid-cols-2 gap-3">
               
               {/* Metric 1: Weight Avg Change */}
@@ -729,32 +772,30 @@ export default function Progress() {
                 </span>
               </Card>
 
-              {/* Metric 2: Waist Change */}
-              <Card className="p-3.5 flex flex-col justify-between">
-                <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
-                  Waist Delta
-                </span>
-                <div className="my-1.5">
-                  {reviewData.waistChange !== null ? (
-                    <span className={`text-xl font-bold font-mono ${
-                      reviewData.waistChange < 0 ? 'text-[var(--color-primary)]' : 'text-amber-400'
-                    }`}>
-                      {reviewData.waistChange > 0 ? `+${reviewData.waistChange}` : reviewData.waistChange} cm
-                    </span>
-                  ) : reviewData.currentWaist !== null ? (
-                    <span className="text-xl font-bold font-mono text-white">
-                      {reviewData.currentWaist} cm
-                    </span>
-                  ) : (
-                    <span className="text-xs text-amber-300 italic">
-                      Missing entry
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] text-[var(--color-text-secondary)]">
-                  {reviewData.prevWaist !== null ? `Prev: ${reviewData.prevWaist} cm` : 'First entry'}
-                </span>
-              </Card>
+              {/* Metric 2: Waist Change (ONLY if waist data exists for this week; otherwise skipped silently) */}
+              {reviewData.currentWaist !== null && (
+                <Card className="p-3.5 flex flex-col justify-between">
+                  <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+                    Waist Delta
+                  </span>
+                  <div className="my-1.5">
+                    {reviewData.waistChange !== null ? (
+                      <span className={`text-xl font-bold font-mono ${
+                        reviewData.waistChange < 0 ? 'text-[var(--color-primary)]' : 'text-amber-400'
+                      }`}>
+                        {reviewData.waistChange > 0 ? `+${reviewData.waistChange}` : reviewData.waistChange} cm
+                      </span>
+                    ) : (
+                      <span className="text-xl font-bold font-mono text-white">
+                        {reviewData.currentWaist} cm
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-[var(--color-text-secondary)]">
+                    {reviewData.prevWaist !== null ? `Prev: ${reviewData.prevWaist} cm` : 'First entry'}
+                  </span>
+                </Card>
+              )}
 
               {/* Metric 3: Workouts Done */}
               <Card className="p-3.5 flex flex-col justify-between">
@@ -798,10 +839,10 @@ export default function Progress() {
                 </div>
               </Card>
 
-              {/* Metric 5: Protein Consistency */}
+              {/* Metric 5: Protein Consistency (2+ protein meals) */}
               <Card className="p-3.5 flex flex-col justify-between">
                 <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
-                  Protein (≥130g)
+                  Protein Consistency
                 </span>
                 <div className="my-1.5">
                   <span className="text-xl font-bold font-mono text-white">
@@ -809,7 +850,7 @@ export default function Progress() {
                   </span>
                 </div>
                 <span className="text-[10px] text-[var(--color-text-secondary)]">
-                  Target: 140g daily
+                  Target: 2+ protein meals/day
                 </span>
               </Card>
 
@@ -835,7 +876,7 @@ export default function Progress() {
 
             </div>
 
-            {/* Automated Coaching Recommendation (Exact single recommendation) */}
+            {/* Automated Coaching Recommendation */}
             <Card isGlowing={reviewData.recommendation.type === 'on_track'} className="space-y-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -966,19 +1007,37 @@ export default function Progress() {
                   </div>
                 </div>
 
+                {/* Track Waist Toggle Switch (Default OFF) */}
+                <div className="p-3 rounded-xl bg-[var(--color-background)] border border-[var(--color-surface-border)] flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-white">Track Waist Measurements</p>
+                    <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
+                      Enable weekly waist logging and history
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleTrackWaist}
+                    className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${
+                      profileForm.trackWaist ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]'
+                    }`}
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        profileForm.trackWaist ? 'translate-x-6' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div>
                     <label className="text-[11px] text-[var(--color-text-secondary)] block mb-1">
-                      Protein Target (g/day)
+                      Protein Target
                     </label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={profileForm.proteinTarget}
-                      onChange={(e) => setProfileForm({ ...profileForm, proteinTarget: e.target.value })}
-                      className="w-full bg-[var(--color-background)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono"
-                    />
-                    <span className="text-[10px] text-[var(--color-text-secondary)] mt-0.5 block">Range: 130-150g</span>
+                    <span className="text-xs font-mono text-white block bg-[var(--color-background)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2">
+                      2+ meals/day
+                    </span>
                   </div>
 
                   <div>
