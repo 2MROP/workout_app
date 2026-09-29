@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "profile": {
+    "age": 22,
+    "height": 188,
+    "startWeight": 98,
+    "currentWeight": 98,
+    "goalWeight": 90,
+    "phase2Goal": 85,
+    "proteinTarget": 140,
+    "proteinMin": 130,
+    "proteinMax": 150,
+    "calorieGuide": 2400,
+    "trackWaist": true,
+    "quickFoods": [
+      {
+        "id": "egg",
+        "label": "Egg",
+        "protein": 6,
+        "unit": "1 egg"
+      },
+      {
+        "id": "chicken",
+        "label": "Chicken",
+        "protein": 27,
+        "unit": "100g"
+      },
+      {
+        "id": "dal",
+        "label": "Dal",
+        "protein": 9,
+        "unit": "1 bowl"
+      },
+      {
+        "id": "curd",
+        "label": "Curd",
+        "protein": 6,
+        "unit": "150ml"
+      },
+      {
+        "id": "soya",
+        "label": "Soya Chunks",
+        "protein": 20,
+        "unit": "40g"
+      },
+      {
+        "id": "milk",
+        "label": "Milk",
+        "protein": 8,
+        "unit": "1 glass"
+      }
+    ]
+  },
+  "workoutLogs": {
+    "2026-09-28": {
+      "leg-press-squat": [
+        {
+          "weight": "80",
+          "reps": "8",
+          "completed": true
+        },
+        {
+          "completed": false,
+          "weight": "",
+          "reps": ""
+        },
+        {
+          "completed": false,
+          "weight": "",
+          "reps": ""
+        }
+      ],
+      "incline-db-press": [
+        {
+          "weight": "24",
+          "reps": "10",
+          "completed": true
+        }
+      ]
+    }
+  },
+  "cardioLogs": {
+    "2026-09-28": {
+      "treadmill": {
+        "completed": false,
+        "minutes": 25
+      }
+    }
+  },
+  "stepLogs": {},
+  "weightLogs": {
+    "2026-09-29": 96.5
+  },
+  "waistLogs": {},
+  "nutritionLogs": {
+    "2026-09-29": {
+      "meals": {
+        "meal1": "2 chapathi, dal, chicken curry",
+        "snack": "Curd with roasted almonds"
+      },
+      "mealProteins": {
+        "meal1": [
+          "Chicken",
+          "Dal"
+        ],
+        "snack": [
+          "Curd"
+        ]
+      }
+    }
+  },
+  "meta": {
+    "lastExportDate": "2026-09-29"
+  }
+}
