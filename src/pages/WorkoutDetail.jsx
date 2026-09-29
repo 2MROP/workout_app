@@ -14,6 +14,7 @@ import { getLocalDateString, getMondayOfWeek, getWeekDates, getDayOfWeekKey, for
 
 function AnimatedExerciseImage({ basePath, altText }) {
   const [isActive, setIsActive] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -22,17 +23,21 @@ function AnimatedExerciseImage({ basePath, altText }) {
     return () => clearInterval(interval);
   }, []);
 
+  if (hasError) return null;
+
   return (
     <div className="relative w-full h-44 rounded-lg overflow-hidden border border-[var(--color-surface-border)] bg-black/50">
       <img 
         src={`${basePath}/0.jpg`} 
         alt={`${altText} start`} 
+        onError={() => setHasError(true)}
         className={`absolute inset-0 w-full h-full object-contain mix-blend-screen transition-opacity duration-300 ${isActive ? 'opacity-0' : 'opacity-70'}`}
         loading="lazy"
       />
       <img 
         src={`${basePath}/1.jpg`} 
         alt={`${altText} active`} 
+        onError={() => setHasError(true)}
         className={`absolute inset-0 w-full h-full object-contain mix-blend-screen transition-opacity duration-300 ${isActive ? 'opacity-70' : 'opacity-0'}`}
         loading="lazy"
       />
@@ -361,6 +366,46 @@ export default function WorkoutDetail() {
                       }}
                     />
                   </div>
+
+                  {/* Read-only Interval Cardio Table Reference */}
+                  {Array.isArray(data.cardioTable) && data.cardioTable.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-[var(--color-surface-border)]">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                          25 Min Protocol Reference
+                        </span>
+                        <span className="text-[10px] text-[var(--color-accent)] font-mono">
+                          Time • Speed • Incline
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-background)]">
+                        <table className="w-full text-[11px] font-mono text-left">
+                          <thead>
+                            <tr className="border-b border-[var(--color-surface-border)] text-[var(--color-text-secondary)] bg-[var(--color-surface)]">
+                              <th className="py-1.5 px-3">Time</th>
+                              <th className="py-1.5 px-3">Speed</th>
+                              <th className="py-1.5 px-3">Incline</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--color-surface-border)]">
+                            {data.cardioTable.map((seg, sIdx) => (
+                              <tr key={sIdx} className="hover:bg-[var(--color-surface-hover)]">
+                                <td className="py-1.5 px-3 text-white font-medium">
+                                  {seg.start}–{seg.end} min
+                                </td>
+                                <td className="py-1.5 px-3 text-[var(--color-primary)]">
+                                  {seg.speed.toFixed(1)} km/h
+                                </td>
+                                <td className="py-1.5 px-3 text-amber-300">
+                                  {seg.incline}%
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </Card>
               );
             }
@@ -388,7 +433,7 @@ export default function WorkoutDetail() {
               const allReachedTop = lastSession.sets.length >= numSets &&
                 lastSession.sets.every(s => parseInt(s.reps, 10) >= topRep);
 
-              if (allReachedTop) {
+              if (allReachedTop && !exercise.isDuration) {
                 progressionSuggestion = '⚡ Try +2.5 kg';
               }
             }
@@ -445,7 +490,7 @@ export default function WorkoutDetail() {
                     >
                       <div className="pt-5 pb-2 border-t border-[var(--color-surface-border)] mt-4">
                         
-                        {/* Exercise Specific Note (e.g. Deadlift safety) */}
+                        {/* Exercise Specific Note */}
                         {exercise.note && (
                           <div className="flex items-start gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl mb-4">
                             <Info size={14} className="mt-0.5 shrink-0" />
@@ -485,36 +530,40 @@ export default function WorkoutDetail() {
                                 />
 
                                 <div className="flex items-center gap-2 flex-1 justify-end">
-                                  {/* Weight Input */}
-                                  <div className="flex items-center gap-1 bg-[var(--color-surface)] px-2 py-1 rounded-lg border border-[var(--color-surface-border)]">
-                                    <input
-                                      type="text"
-                                      inputMode="decimal"
-                                      placeholder="kg"
-                                      value={setData.weight || ''}
-                                      onChange={(e) => {
-                                        const val = e.target.value.replace(/[^0-9.]/g, '');
-                                        logSet(targetDateStr, exercise.id, setIdx, { weight: val });
-                                      }}
-                                      className="w-12 bg-transparent text-xs text-right font-mono text-white focus:outline-none"
-                                    />
-                                    <span className="text-[10px] text-[var(--color-text-secondary)]">kg</span>
-                                  </div>
+                                  {/* Weight Input (optional for bodyweight/plank) */}
+                                  {!exercise.isDuration && (
+                                    <div className="flex items-center gap-1 bg-[var(--color-surface)] px-2 py-1 rounded-lg border border-[var(--color-surface-border)]">
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        placeholder="kg"
+                                        value={setData.weight || ''}
+                                        onChange={(e) => {
+                                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                                          logSet(targetDateStr, exercise.id, setIdx, { weight: val });
+                                        }}
+                                        className="w-12 bg-transparent text-xs text-right font-mono text-white focus:outline-none"
+                                      />
+                                      <span className="text-[10px] text-[var(--color-text-secondary)]">kg</span>
+                                    </div>
+                                  )}
 
-                                  {/* Reps Input */}
+                                  {/* Reps or Seconds Input */}
                                   <div className="flex items-center gap-1 bg-[var(--color-surface)] px-2 py-1 rounded-lg border border-[var(--color-surface-border)]">
                                     <input
                                       type="text"
                                       inputMode="numeric"
-                                      placeholder={exercise.reps.split('-')[0] || '8'}
+                                      placeholder={exercise.isDuration ? '45' : (exercise.reps.split('-')[0] || '8')}
                                       value={setData.reps || ''}
                                       onChange={(e) => {
                                         const val = e.target.value.replace(/[^0-9]/g, '');
                                         logSet(targetDateStr, exercise.id, setIdx, { reps: val });
                                       }}
-                                      className="w-8 bg-transparent text-xs text-right font-mono text-white focus:outline-none"
+                                      className="w-9 bg-transparent text-xs text-right font-mono text-white focus:outline-none"
                                     />
-                                    <span className="text-[10px] text-[var(--color-text-secondary)]">reps</span>
+                                    <span className="text-[10px] text-[var(--color-text-secondary)]">
+                                      {exercise.isDuration ? 'sec' : 'reps'}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
@@ -549,7 +598,7 @@ export default function WorkoutDetail() {
                           </div>
                         </div>
 
-                        {/* Animated Exercise Visual */}
+                        {/* Animated Exercise Visual (only if match exists and loads cleanly) */}
                         {exerciseImages[exercise.id] && exerciseImages[exercise.id].length > 0 && (
                           <div className="w-full mt-3 rounded-xl overflow-hidden bg-black/40 border border-[var(--color-surface-border)] p-2">
                             <div className={`grid gap-2 ${exerciseImages[exercise.id].length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
