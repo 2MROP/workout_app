@@ -135,7 +135,7 @@ export default function Dashboard() {
                   return Array.isArray(list) && list.some(p => p && p.toLowerCase() !== 'none');
                 }).length}
               </span>
-              <span className="text-xs text-[var(--color-text-secondary)]">/ 2+ protein meals</span>
+              <span className="text-xs text-[var(--color-text-secondary)]">/ 2+ target</span>
             </div>
             <div className="w-full bg-[var(--color-surface-border)] h-1 rounded-full mt-2 overflow-hidden">
               <div 

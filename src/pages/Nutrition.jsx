@@ -182,7 +182,7 @@ export default function Nutrition() {
           </label>
           <input
             type="text"
-            placeholder="e.g. Chicken biryani with raita, or 3 dosas with egg curry"
+            placeholder="e.g. Chicken biryani, or 3 dosas with egg"
             value={note}
             onChange={(e) => updateMealNote(slotKey, e.target.value)}
             className="w-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-primary)]"
@@ -289,25 +289,28 @@ export default function Nutrition() {
 
         {/* Daily Protein Target Status Card */}
         <Card isGlowing={isTargetHit} className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold">
+              <span className="text-[10px] text-[var(--color-text-secondary)] uppercase tracking-wider font-semibold block mb-0.5">
                 Daily Protein Target
               </span>
-              <div className="flex items-baseline gap-2 mt-0.5">
+              <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="text-2xl font-bold font-mono text-white">
-                  {proteinSlotsCount} <span className="text-sm font-normal text-[var(--color-text-secondary)]">/ 2+ meals with protein</span>
+                  {proteinSlotsCount}
+                </span>
+                <span className="text-xs text-[var(--color-text-secondary)] font-medium">
+                  / 2+ protein meals
                 </span>
               </div>
             </div>
 
             {isTargetHit ? (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/40 text-[var(--color-primary)] text-xs font-bold shadow-[var(--shadow-glow)]">
+              <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/40 text-[var(--color-primary)] text-xs font-bold shadow-[var(--shadow-glow)]">
                 <Sparkles size={14} />
                 <span>Target Hit!</span>
               </div>
             ) : (
-              <span className="text-xs text-[var(--color-text-secondary)] font-mono">
+              <span className="shrink-0 text-xs text-[var(--color-text-secondary)] font-mono">
                 {2 - proteinSlotsCount} more meal needed
               </span>
             )}

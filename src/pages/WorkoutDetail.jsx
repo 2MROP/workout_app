@@ -542,7 +542,7 @@ export default function WorkoutDetail() {
                                           const val = e.target.value.replace(/[^0-9.]/g, '');
                                           logSet(targetDateStr, exercise.id, setIdx, { weight: val });
                                         }}
-                                        className="w-12 bg-transparent text-xs text-right font-mono text-white focus:outline-none"
+                                        className="w-14 bg-transparent text-xs text-right font-mono text-white focus:outline-none pr-0.5"
                                       />
                                       <span className="text-[10px] text-[var(--color-text-secondary)]">kg</span>
                                     </div>
@@ -559,7 +559,7 @@ export default function WorkoutDetail() {
                                         const val = e.target.value.replace(/[^0-9]/g, '');
                                         logSet(targetDateStr, exercise.id, setIdx, { reps: val });
                                       }}
-                                      className="w-9 bg-transparent text-xs text-right font-mono text-white focus:outline-none"
+                                      className="w-11 bg-transparent text-xs text-right font-mono text-white focus:outline-none pr-0.5"
                                     />
                                     <span className="text-[10px] text-[var(--color-text-secondary)]">
                                       {exercise.isDuration ? 'sec' : 'reps'}
